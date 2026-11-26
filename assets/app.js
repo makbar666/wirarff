@@ -49,6 +49,7 @@ function safeHttpsUrl(value) {
   catch { return ''; }
 }
 function renderDocuments(documents) {
+  if (!documentList) return;
   documentList.replaceChildren();
   const query = searchInput.value.trim().toLowerCase();
   const filtered = query ? documents.filter(item => `${item.title} ${item.description} ${item.category || ''}`.toLowerCase().includes(query)) : documents;
@@ -80,6 +81,7 @@ function renderDocuments(documents) {
   if (query && !filtered.length) documentList.append(node('p', 'search-empty', 'Dokumen tidak ditemukan.'));
 }
 function renderVehicles(vehicles) {
+  if (!vehicleList) return;
   vehicleList.replaceChildren();
   if (!vehicles.length) {
     vehicleList.append(node('p', 'vehicle-status', 'Belum ada kendaraan.'));
