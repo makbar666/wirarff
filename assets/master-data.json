@@ -9,11 +9,5 @@
     { "id": "pelatihan", "number": 7, "title": "Pelatihan dan Kendali Mutu", "description": "Dokumentasi pelatihan dan pengendalian mutu.", "category": "PERSONEL", "url": "", "actionType": "link", "icon": "◇" },
     { "id": "bulanan", "number": 8, "title": "Laporan Bulanan PKP-PK", "description": "Rekapitulasi kegiatan dan laporan bulanan.", "category": "ADMINISTRASI", "url": "", "actionType": "link", "icon": "▥" }
   ],
-  "vehicles": [
-    { "id": "foam-tender-1", "name": "Foam Tender 1", "url": "" },
-    { "id": "foam-tender-2", "name": "Foam Tender 2", "url": "" },
-    { "id": "commando-car", "name": "Commando Car", "url": "" },
-    { "id": "ambulance", "name": "Ambulance", "url": "" },
-    { "id": "water-tank", "name": "Water Tank", "url": "" }
-  ]
+  "vehicles": []
 }
