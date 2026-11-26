@@ -67,6 +67,18 @@ function renderDocuments(documents) {
     card.append(bottom);
     documentList.append(card);
   }
+  const addCard = node('article', 'card add-card');
+  const addTop = node('div', 'card-top');
+  addTop.append(node('span', 'card-number', 'MASTER DATA'));
+  addTop.append(node('span', 'card-icon add-card-icon', '+'));
+  addCard.append(addTop, node('h3', '', 'Tambah dokumen'), node('p', '', 'Tambahkan tautan dokumen atau pilihan kendaraan.'));
+  const addBottom = node('div', 'card-bottom');
+  const addButton = node('button', 'card-action', 'Tambah dokumen →');
+  addButton.type = 'button';
+  addButton.addEventListener('click', () => openDialog('document-form-dialog'));
+  addBottom.append(addButton);
+  addCard.append(addBottom);
+  documentList.append(addCard);
 }
 function renderVehicles(vehicles) {
   vehicleList.replaceChildren();
@@ -124,7 +136,6 @@ document.getElementById('logout-button')?.addEventListener('click', async () => 
 documentList?.addEventListener('click', event => {
   if (event.target.closest('[data-open-vehicles]')) openDialog('maintenance-dialog');
 });
-document.getElementById('add-document-button')?.addEventListener('click', () => openDialog('document-form-dialog'));
 document.getElementById('add-vehicle-button')?.addEventListener('click', () => openDialog('vehicle-form-dialog'));
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeDialog(button.dataset.close)));
 document.getElementById('document-action')?.addEventListener('change', event => {

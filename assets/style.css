@@ -16,9 +16,10 @@
 .card{box-shadow:0 5px 18px rgba(12,47,78,.045)}
 @media(max-width:600px){.directory::before{inset:0 -18px}.directory::after{width:55%}}
 /* Master data directory and vehicle editor */
-.master-actions{display:flex;justify-content:flex-end;margin:-12px 0 18px}
-.master-actions .card-action{border:1px solid #b8cbd8;background:#fff;padding:11px 15px;color:#07518a}
-.master-actions .card-action:hover{background:#edf5fa}
+.add-card{border:1px dashed #93adc2!important;background:linear-gradient(145deg,#fff,#f2f7fb)!important;justify-content:flex-start}
+.add-card .card-icon.add-card-icon{display:grid;place-items:center;font-size:28px;font-weight:400;color:#07518a;background:#eaf2f8}
+.add-card .card-action{color:#07518a}
+.add-card:hover{border-color:#07518a!important;background:#edf5fa!important}
 .master-error,.form-error{color:#9c3f27;background:#fff0eb;padding:12px;font-size:13px;line-height:1.5}
 .master-form{display:grid;gap:9px;margin-top:24px}
 .master-form label{font-size:12px;font-weight:700;color:#465d6c;margin-top:7px}
@@ -29,7 +30,6 @@
 .master-form .primary{margin-top:9px}
 .dialog-add{display:block;width:auto;margin:22px 0 0 auto}
 .form-error{margin:4px 0 0}
-@media(max-width:600px){.master-actions{margin:0 0 18px}.master-actions .card-action{padding:10px 12px}}
 /* Aksen visual di dalam setiap kartu direktori. */
 .directory::before,.directory::after{content:none}
 .card{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(145deg,#fff 35%,#edf4fa 100%)}
