@@ -101,7 +101,7 @@ function updateFormMode(clearUrl = false) {
   document.getElementById('record-url-field').hidden = isPicker;
   document.getElementById('record-action-hint').hidden = isVehicle;
   if (clearUrl) document.getElementById('record-url').value = '';
-  document.getElementById('record-action-hint').textContent = isPicker ? 'Kartu akan membuka pilihan kendaraan.' : 'Kartu akan membuka tautan dokumen.';
+  document.getElementById('record-action-hint').textContent = isPicker ? 'Kartu akan membuka opsi pilihan kendaraan.' : 'Kartu akan membuka tautan dokumen.';
 }
 function openNew() {
   recordForm.reset();
