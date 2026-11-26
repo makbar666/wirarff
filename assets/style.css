@@ -96,3 +96,21 @@
 @media(max-width:600px){.app-toast{right:16px;bottom:16px}}
 @keyframes loading-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.directory-search{max-width:none;margin-bottom:18px}}
+.master-menu-link{display:inline-flex;align-items:center;border:1px solid #cbd9e3;background:#fff;padding:10px 14px;color:#07518a;font-size:12px;font-weight:700;text-decoration:none}
+.master-menu-link:hover{background:#edf5fa;border-color:#9cbdd7}
+.master-page .section-heading{align-items:center;margin-bottom:24px}
+.master-add-button{width:auto;margin:0;padding:13px 17px;gap:12px;white-space:nowrap}
+.master-table-wrap{overflow-x:auto;background:#fff;border:1px solid #dce5ee;box-shadow:0 5px 20px rgba(12,47,78,.04)}
+.master-table{width:100%;min-width:850px;border-collapse:collapse;color:#183c61;font-size:12px}
+.master-table th{padding:13px 14px;background:#0b345b;color:#fff;text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.master-table td{padding:13px 14px;border-bottom:1px solid #e5ebf0;vertical-align:middle}
+.master-table tbody tr:last-child td{border-bottom:0}
+.master-table tbody tr:hover{background:#f5f8fb}
+.master-table .table-number{color:#8293a2;font-size:11px}
+.master-table .table-name{min-width:180px;font-weight:700}
+.master-table .table-name small{display:block;margin-top:4px;color:#83939f;font-size:11px;font-weight:400;line-height:1.45}
+.master-table .table-link{color:#07518a;font-weight:700;text-decoration:none;white-space:nowrap}
+.master-table .table-actions{display:flex;gap:7px;white-space:nowrap}
+.table-empty{padding:25px;background:#fff;border:1px solid #dce5ee;color:#71859a;text-align:center;font-size:13px}
+.master-page .directory{padding-top:36px}
+@media(max-width:700px){.master-menu-link{padding:9px 10px}.master-page .section-heading{align-items:flex-start;flex-direction:column}.master-add-button{width:auto}.top-right{gap:12px}}
