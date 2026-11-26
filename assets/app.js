@@ -10,6 +10,7 @@ const clearSearchButton = document.getElementById('clear-search');
 const loadingDialog = document.getElementById('loading-dialog');
 let allDocuments = [];
 let pendingRequests = 0;
+let resolveDeleteConfirmation = null;
 
 function showPortal(user) {
   const userName = user?.name ?? user?.display_name ?? user?.displayName;
@@ -53,7 +54,7 @@ function safeHttpsUrl(value) {
 }
 async function deleteItem(kind, item) {
   const typeLabel = kind === 'documents' ? 'dokumen' : 'kendaraan';
-  if (!window.confirm(`Hapus ${typeLabel} “${item.title || item.name}”?`)) return;
+  if (!await confirmDelete(`Hapus ${typeLabel} “${item.title || item.name}”?`)) return;
   try {
     await api(kind, { method: 'DELETE', body: JSON.stringify({ id: item.id }) });
     await loadMasterData();
@@ -61,6 +62,14 @@ async function deleteItem(kind, item) {
     masterError.textContent = error.message;
     masterError.hidden = false;
   }
+}
+function confirmDelete(message) {
+  const dialog = document.getElementById('delete-confirm-dialog');
+  document.getElementById('delete-confirm-message').textContent = message;
+  return new Promise(resolve => {
+    resolveDeleteConfirmation = resolve;
+    dialog.showModal();
+  });
 }
 function renderDocuments(documents) {
   documentList.replaceChildren();
@@ -176,6 +185,12 @@ documentList?.addEventListener('click', event => {
   if (event.target.closest('[data-open-vehicles]')) openDialog('maintenance-dialog');
 });
 document.getElementById('add-vehicle-button')?.addEventListener('click', () => openDialog('vehicle-form-dialog'));
+document.getElementById('delete-confirm')?.addEventListener('click', () => document.getElementById('delete-confirm-dialog').close('confirm'));
+document.getElementById('delete-cancel')?.addEventListener('click', () => document.getElementById('delete-confirm-dialog').close('cancel'));
+document.getElementById('delete-confirm-dialog')?.addEventListener('close', event => {
+  resolveDeleteConfirmation?.(event.currentTarget.returnValue === 'confirm');
+  resolveDeleteConfirmation = null;
+});
 searchInput?.addEventListener('input', () => {
   clearSearchButton.hidden = !searchInput.value;
   renderDocuments(allDocuments);

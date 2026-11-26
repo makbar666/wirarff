@@ -79,5 +79,13 @@
 .delete-item{flex:none;padding:5px 7px;border:1px solid #e8c9c9;background:#fff;color:#a6373d;font:700 10px 'DM Sans',sans-serif;cursor:pointer}
 .delete-item:hover,.delete-item:focus-visible{background:#fff0ef;border-color:#d8252d;outline:0}
 .vehicle-delete{margin-left:auto}
+.confirm-dialog{width:min(420px,calc(100% - 32px));padding:27px 30px}
+.confirm-dialog .dialog-head h2{margin:8px 0}
+.confirm-dialog .dialog-head p{margin:0;color:#71859a;font-size:13px;line-height:1.5}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:26px}
+.confirm-actions button{padding:11px 18px;border:1px solid #d5e0e9;font:700 12px 'DM Sans',sans-serif;cursor:pointer}
+.confirm-cancel{background:#fff;color:#435c70}
+.confirm-delete{background:#c92c36;border-color:#c92c36!important;color:#fff}
+.confirm-delete:hover{background:#a9222b}
 @keyframes loading-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.directory-search{max-width:none;margin-bottom:18px}}
