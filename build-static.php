@@ -22,6 +22,7 @@ $html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="
 if (!is_dir($root . '/public/assets')) mkdir($root . '/public/assets', 0775, true);
 file_put_contents($root . '/public/index.html', $html);
 file_put_contents($root . '/public/master-menu.html', $master);
+copy($root . '/calculator.html', $root . '/public/kalkulator.html');
 copy($root . '/assets/style.css', $root . '/public/assets/style.css');
 copy($root . '/assets/app.js', $root . '/public/assets/app.js');
 copy($root . '/assets/master.js', $root . '/public/assets/master.js');
