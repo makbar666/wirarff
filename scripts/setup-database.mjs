@@ -11,6 +11,8 @@ for (const statement of schema.split(';').map(part => part.replace(/^\s*--.*$/gm
 }
 await sql.query(`DELETE FROM management_vehicles
   WHERE id IN ('foam-tender-1', 'foam-tender-2', 'commando-car', 'ambulance', 'water-tank')`);
+await sql.query(`DELETE FROM management_documents
+  WHERE id IN ('apar', 'checklist', 'maintenance', 'foam', 'inventaris', 'pelatihan', 'bulanan')`);
 for (const item of masterData.documents) {
   await sql.query(`INSERT INTO management_documents (id, number, title, description, category, url, action_type, icon)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING`,
