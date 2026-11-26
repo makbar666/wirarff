@@ -8,7 +8,8 @@ export function createAuth(request, headers, env) {
     context: () => ({
       getCookies: () => request.headers.get('cookie') || '',
       setCookie: (name, value, options) => headers.append('set-cookie', serializeSetCookie({ name, value, ...options })),
-      getHeader: name => request.headers.get(name), getOrigin: () => new URL(request.url).origin, getFramework: () => 'netlify'
+      getHeader: name => request.headers.get(name), getOrigin: () => new URL(request.url).origin,
+      getFramework: () => process.env.VERCEL ? 'vercel' : process.env.NETLIFY ? 'netlify' : 'node'
     })
   });
   return auth;

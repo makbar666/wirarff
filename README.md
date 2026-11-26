@@ -1,6 +1,6 @@
 # PKP-PK Management Center
 
-Portal direktori operasional dengan halaman statis, Netlify Functions (Node.js 22), Neon Postgres, dan Managed Neon Auth. PHP dipakai saat build untuk merender template; hosting PHP biasa tidak menjalankan API online.
+Portal direktori operasional dengan halaman statis, serverless functions (Node.js 22), Neon Postgres, dan Managed Neon Auth. PHP dipakai saat build lokal untuk merender template; hosting PHP biasa tidak menjalankan API online.
 
 ## Menjalankan lokal
 
@@ -18,6 +18,15 @@ Portal direktori operasional dengan halaman statis, Netlify Functions (Node.js 2
 2. Tambahkan environment variables pada scope Functions: `DATABASE_URL` (connection string pooled Neon), `NEON_AUTH_BASE_URL` (Auth URL lengkap), dan `NEON_AUTH_COOKIE_SECRET` (acak, minimal 32 karakter). Gunakan database dan Auth URL dari branch yang sama.
 3. Tambahkan origin Netlify dan origin lokal ke trusted domains di Neon Auth. Deploy ulang setelah mengatur environment.
 4. Buat akun anggota menggunakan instruksi di bawah.
+
+## Deploy Vercel
+
+1. Import repository ke Vercel. `vercel.json` sudah menetapkan build command `npm run build` dan output directory `public`; Node.js dipatok ke 22.x melalui `package.json`.
+2. Tambahkan `DATABASE_URL`, `NEON_AUTH_BASE_URL`, dan `NEON_AUTH_COOKIE_SECRET` pada Project Settings → Environment Variables untuk Production dan Preview yang digunakan.
+3. Deploy. API login, logout, dan session tersedia sebagai Vercel Functions di `/api/login`, `/api/logout`, dan `/api/session`.
+4. Tambahkan origin domain Vercel yang dipakai ke trusted domains Neon Auth. Preview memakai origin berbeda; gunakan Production domain untuk login production yang konsisten.
+
+Jangan aktifkan rewrite fallback SPA untuk `/api/*`; endpoint harus ditangani Vercel Functions. Credential yang sama dengan branch Neon harus disimpan sebagai environment variables Vercel, tidak di commit.
 
 ## Akun anggota
 
