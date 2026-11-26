@@ -22,7 +22,7 @@ Portal direktori operasional dengan halaman statis, serverless functions (Node.j
 ## Deploy Vercel
 
 1. Import repository ke Vercel. `vercel.json` sudah menetapkan build command `npm run build` dan output directory `public`; Node.js dipatok ke 22.x melalui `package.json`.
-2. Tambahkan `DATABASE_URL`, `NEON_AUTH_BASE_URL`, dan `NEON_AUTH_COOKIE_SECRET` pada Project Settings → Environment Variables untuk Production dan Preview yang digunakan.
+2. Tambahkan `DATABASE_URL`, `NEON_AUTH_BASE_URL`, dan `NEON_AUTH_COOKIE_SECRET` pada Project Settings → Environment Variables untuk Production dan Preview yang digunakan. `PORTAL_ADMIN_EMAIL` opsional untuk menetapkan administrator awal melalui email.
 3. Deploy. API login, logout, dan session tersedia sebagai Vercel Functions di `/api/login`, `/api/logout`, dan `/api/session`.
 4. Tambahkan origin domain Vercel yang dipakai ke trusted domains Neon Auth. Preview memakai origin berbeda; gunakan Production domain untuk login production yang konsisten.
 
@@ -30,7 +30,7 @@ Jangan aktifkan rewrite fallback SPA untuk `/api/*`; endpoint harus ditangani Ve
 
 ## Akun anggota
 
-Akun Neon Auth hanya bisa masuk jika memiliki baris aktif di `management_members`. Tidak ada pendaftaran publik maupun halaman pengelolaan anggota.
+Akun Neon Auth hanya bisa masuk jika memiliki baris aktif di `management_members`. Pendaftaran publik tetap tidak tersedia. Role akses disimpan di `management_roles` dan dapat ditetapkan per anggota oleh administrator.
 
 Untuk membuat anggota pertama, salin `.env.example` ke `.env`, isi tiga variabel backend dan `MEMBER_PASSWORD` (12–128 karakter), lalu jalankan:
 
@@ -44,10 +44,19 @@ Hapus `MEMBER_PASSWORD` dari `.env` setelah digunakan. Jika email sudah terdafta
 UPDATE management_members SET enabled = false WHERE user_id = 'ID_PENGGUNA';
 ```
 
+Setelah deploy perubahan role, jalankan migrasi ringan pada database yang sama dengan aplikasi:
+
+```powershell
+node scripts/migrate-role-access.mjs
+node scripts/set-member-role.mjs admin@organisasi.id admin
+```
+
+Perintah kedua menetapkan administrator awal dan hanya perlu dilakukan sekali. Alternatifnya, atur `PORTAL_ADMIN_EMAIL` pada environment Vercel/local; alamat tersebut otomatis mendapat role Administrator saat login. Administrator dapat membuka **Master Role & User**, membuat role khusus dengan izin kelola menu/pengguna, dan menetapkan role kepada setiap anggota aktif. Akun lama mendapat role **Pengelola menu** saat migrasi agar pengelolaan dokumen yang sudah ada tetap berfungsi.
+
 Jangan commit `.env` atau menyimpan connection string di `public/`. Konfigurasi `.env.example` hanya contoh placeholder.
 
 ## Isi portal
 
-Template portal dan halaman pengelolaan dirender ke `public/index.html` dan `public/master-menu.html` saat build. Tombol **Master Menu** di header membuka tabel pengelolaan dokumen dan kendaraan; anggota yang login dapat menambah, mengedit, atau menghapus item dan perubahan langsung terlihat untuk semua anggota. Datanya disimpan di tabel Neon `management_documents` dan `management_vehicles`. Data awal ada di `assets/master-data.json` dan dimasukkan oleh `node scripts/setup-database.mjs` tanpa menimpa item seed yang sudah ada. Tautan Google Drive tetap mengikuti izin berbagi pada dokumen masing-masing.
+Template portal, halaman master menu, dan master role/user dirender ke `public/index.html`, `public/master-menu.html`, dan `public/master-users.html` saat build. Role diperiksa pada API; hanya role dengan izin yang dapat mengelola menu atau pengguna. Data role disimpan di Neon `management_roles` dan penugasan pada `management_members`.
 
 Kalkulator ARFF tersedia di `public/kalkulator.html` dan dapat dibuka dari dashboard. Halamannya mencakup perhitungan pesawat, personel/TRA, tabel minimum, dan database dimensi pesawat. Nilai awal Dhoho tidak mengisi kategori PKP-PK; kategori resmi harus dipilih sebelum hasil Q1/Q2 digunakan. Rumus, nilai tabel, dimensi, serta profil bandara masih harus diverifikasi terhadap dokumen resmi terbaru dan pemilik operasional; kalkulator adalah alat bantu awal, bukan penentu kepatuhan.

@@ -16,6 +16,10 @@ function showPortal(user) {
   if (typeof name !== 'string' || !name.trim()) throw new Error('Respons sesi tidak memuat nama akun.');
   if (loginScreen) loginScreen.hidden = true;
   if (portalApp) portalApp.hidden = false;
+  const menuLink = document.getElementById('master-menu-link');
+  const usersLink = document.getElementById('master-users-link');
+  if (menuLink) menuLink.hidden = user?.canManageMenus !== true;
+  if (usersLink) usersLink.hidden = user?.canManageUsers !== true;
   document.body.className = 'app';
   document.title = `Dashboard — ${name} — PKP-PK Weda Bay`;
 }

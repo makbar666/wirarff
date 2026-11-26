@@ -1,11 +1,29 @@
 -- Jalankan pada branch Neon yang sama dengan Auth URL aplikasi.
+CREATE TABLE IF NOT EXISTS management_roles (
+    id text PRIMARY KEY,
+    name text NOT NULL UNIQUE CHECK (length(trim(name)) BETWEEN 1 AND 80),
+    can_manage_menus boolean NOT NULL DEFAULT false,
+    can_manage_users boolean NOT NULL DEFAULT false,
+    is_system boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO management_roles (id, name, can_manage_menus, can_manage_users, is_system) VALUES
+    ('admin', 'Administrator', true, true, true),
+    ('editor', 'Pengelola menu', true, false, true),
+    ('member', 'Anggota', false, false, true)
+ON CONFLICT (id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS management_members (
     user_id text PRIMARY KEY,
     display_name text NOT NULL,
-    enabled boolean NOT NULL DEFAULT true
+    enabled boolean NOT NULL DEFAULT true,
+    role_id text NOT NULL DEFAULT 'editor' REFERENCES management_roles(id)
 );
+ALTER TABLE management_members ADD COLUMN IF NOT EXISTS role_id text NOT NULL DEFAULT 'editor' REFERENCES management_roles(id);
 REVOKE ALL ON management_members FROM PUBLIC;
 ALTER TABLE management_members ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON management_roles FROM PUBLIC;
+ALTER TABLE management_roles ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS management_documents (
     id text PRIMARY KEY,

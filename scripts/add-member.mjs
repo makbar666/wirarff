@@ -17,6 +17,6 @@ try {
     if (result.error || !result.data?.user?.id) throw Error();
     existing = { id: result.data.user.id };
   }
-  await sql.query('INSERT INTO management_members(user_id, display_name, enabled) VALUES ($1,$2,true) ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name, enabled=true', [existing.id, name]);
+  await sql.query("INSERT INTO management_members(user_id, display_name, enabled, role_id) VALUES ($1,$2,true,'member') ON CONFLICT(user_id) DO UPDATE SET display_name=EXCLUDED.display_name, enabled=true", [existing.id, name]);
   console.log('Anggota diberi akses. Selesaikan verifikasi email jika diwajibkan oleh Neon Auth.');
 } catch { console.error('Gagal menambahkan anggota. Periksa env, Neon Auth, trusted domain, dan schema.sql. Credential tidak dicetak.'); process.exitCode = 1; }

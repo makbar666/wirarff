@@ -195,7 +195,10 @@ document.getElementById('master-logout').addEventListener('click', async () => {
   try { await api('logout', { method: 'POST', body: '{}' }); } finally { window.location.assign('/'); }
 });
 
-api('session').then(async () => {
+api('session').then(async ({ user }) => {
+  if (!user?.canManageMenus) return window.location.replace('/');
+  const usersLink = document.getElementById('master-users-link');
+  if (usersLink) usersLink.hidden = user?.canManageUsers !== true;
   masterContent.hidden = false;
   await loadMasterData();
 }).catch(() => window.location.replace('/'));

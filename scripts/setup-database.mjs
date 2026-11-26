@@ -26,8 +26,8 @@ await sql.query(`SELECT setval(pg_get_serial_sequence('management_documents','nu
   GREATEST(COALESCE((SELECT max(number) FROM management_documents), 1), 1), true)`);
 const [source] = await sql.query("SELECT to_regclass('public.incident_members') AS table_name");
 if (!source?.table_name) throw new Error('Daftar anggota sumber tidak ditemukan; tabel target sudah dibuat tanpa menyalin anggota.');
-await sql.query(`INSERT INTO management_members (user_id, display_name, enabled)
-  SELECT user_id, display_name, enabled FROM incident_members
+await sql.query(`INSERT INTO management_members (user_id, display_name, enabled, role_id)
+  SELECT user_id, display_name, enabled, 'member' FROM incident_members
   ON CONFLICT (user_id) DO UPDATE SET display_name = EXCLUDED.display_name, enabled = EXCLUDED.enabled`);
 const [count] = await sql.query('SELECT count(*)::int AS count FROM management_members WHERE enabled = true');
 console.log(`Skema siap; ${count.count} anggota aktif disalin/diperbarui.`);
