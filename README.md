@@ -48,4 +48,4 @@ Jangan commit `.env` atau menyimpan connection string di `public/`. Konfigurasi 
 
 ## Isi portal
 
-Daftar dokumen dan tautan kendaraan ada di `config.php`; isi template dirender ke `public/index.html` saat build. Perubahan template atau aset perlu dibangun ulang. Tautan Google Drive tetap mengikuti izin berbagi yang diatur pada dokumen masing-masing.
+Template awal dirender ke `public/index.html` saat build. Master data dokumen dan kendaraan disimpan di tabel Neon `management_documents` dan `management_vehicles`; anggota yang login dapat menambah item dan perubahan langsung terlihat untuk semua anggota. Data awal ada di `assets/master-data.json` dan dimasukkan oleh `node scripts/setup-database.mjs` tanpa menimpa item seed yang sudah ada. Tautan Google Drive tetap mengikuti izin berbagi pada dokumen masing-masing.

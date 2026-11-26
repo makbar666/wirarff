@@ -21,8 +21,17 @@ createServer(async (req, res) => {
     } else {
       const file = resolve(root, '.' + decodeURIComponent(url.pathname === '/' ? '/index.html' : url.pathname));
       if (!file.startsWith(root + sep)) { res.writeHead(403); res.end(); return; }
+      const contents = await readFile(file);
       res.writeHead(200, { 'Content-Type': types[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
-      res.end(await readFile(file));
+      res.end(contents);
     }
-  } catch { res.writeHead(404); res.end('Tidak ditemukan.'); }
+  } catch (error) {
+    if (res.headersSent) {
+      if (!res.writableEnded) res.end();
+      return;
+    }
+    const notFound = error?.code === 'ENOENT';
+    res.writeHead(notFound ? 404 : 500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(notFound ? 'Tidak ditemukan.' : 'Layanan lokal tidak tersedia.');
+  }
 }).listen(8083, '127.0.0.1', () => console.log('Portal lokal: http://localhost:8083'));

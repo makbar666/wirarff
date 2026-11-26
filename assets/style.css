@@ -15,6 +15,20 @@
 .directory::after{content:"";position:absolute;z-index:-1;right:1%;top:12px;width:32%;height:calc(100% - 24px);background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(17,70,112,.035) 22px 24px,transparent 24px 46px);mask-image:linear-gradient(to left,#000,transparent);pointer-events:none}
 .card{box-shadow:0 5px 18px rgba(12,47,78,.045)}
 @media(max-width:600px){.directory::before{inset:0 -18px}.directory::after{width:55%}}
+/* Master data directory and vehicle editor */
+.master-actions{display:flex;justify-content:flex-end;margin:-12px 0 18px}
+.master-actions .card-action{border:1px solid #b8cbd8;background:#fff;padding:11px 15px;color:#07518a}
+.master-actions .card-action:hover{background:#edf5fa}
+.master-error,.form-error{color:#9c3f27;background:#fff0eb;padding:12px;font-size:13px;line-height:1.5}
+.master-form{display:grid;gap:9px;margin-top:24px}
+.master-form label{font-size:12px;font-weight:700;color:#465d6c;margin-top:7px}
+.master-form input,.master-form select,.master-form textarea{width:100%;padding:12px;border:1px solid #d8e1e9;border-radius:3px;background:#fff;color:#102b4b;font:inherit;font-size:13px;outline:none}
+.master-form input:focus,.master-form select:focus,.master-form textarea:focus{border-color:#28699d;box-shadow:0 0 0 3px #28699d22}
+.master-form textarea{resize:vertical;min-height:84px}
+.master-form .primary{margin-top:9px}
+.dialog-add{display:block;width:auto;margin:22px 0 0 auto}
+.form-error{margin:4px 0 0}
+@media(max-width:600px){.master-actions{margin:0 0 18px}.master-actions .card-action{padding:10px 12px}}
 /* Aksen visual di dalam setiap kartu direktori. */
 .directory::before,.directory::after{content:none}
 .card{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(145deg,#fff 35%,#edf4fa 100%)}
