@@ -25,6 +25,7 @@
 .master-form input,.master-form select,.master-form textarea{width:100%;padding:12px;border:1px solid #d8e1e9;border-radius:3px;background:#fff;color:#102b4b;font:inherit;font-size:13px;outline:none}
 .master-form input:focus,.master-form select:focus,.master-form textarea:focus{border-color:#28699d;box-shadow:0 0 0 3px #28699d22}
 .master-form textarea{resize:vertical;min-height:84px}
+.form-hint{margin:-2px 0 0;color:#7d8b82;font-size:12px;line-height:1.5}
 .master-form .primary{margin-top:9px}
 .dialog-add{display:block;width:auto;margin:22px 0 0 auto}
 .form-error{margin:4px 0 0}

@@ -63,7 +63,7 @@ export function createHandler({ env = process.env } = {}) {
         const description = typeof input?.description === 'string' ? input.description.trim() : '';
         const category = typeof input?.category === 'string' ? input.category.trim().toUpperCase() : '';
         const actionType = input?.actionType;
-        if (!title || title.length > 160 || description.length > 500 || !category || category.length > 60) throw fail(400, 'Nama, kategori, atau deskripsi dokumen tidak valid.');
+        if (!title || title.length > 160 || description.length > 500 || category.length > 60) throw fail(400, 'Nama atau deskripsi dokumen tidak valid.');
         if (!['link', 'vehicle_picker'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
         const documentUrl = httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen');
         const [document] = await sql.query(`INSERT INTO management_documents (id, title, description, category, url, action_type, icon)

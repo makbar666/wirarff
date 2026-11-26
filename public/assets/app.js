@@ -45,7 +45,7 @@ function renderDocuments(documents) {
   for (const item of documents) {
     const card = node('article', 'card');
     const top = node('div', 'card-top');
-    top.append(node('span', 'card-number', `${String(item.number).padStart(2, '0')} / ${item.category}`));
+    top.append(node('span', 'card-number', `${String(item.number).padStart(2, '0')}${item.category ? ` / ${item.category}` : ''}`));
     top.append(node('span', 'card-icon', item.icon || '▤'));
     card.append(top, node('h3', '', item.title), node('p', '', item.description || ''));
     const bottom = node('div', 'card-bottom');
@@ -127,6 +127,14 @@ documentList?.addEventListener('click', event => {
 document.getElementById('add-document-button')?.addEventListener('click', () => openDialog('document-form-dialog'));
 document.getElementById('add-vehicle-button')?.addEventListener('click', () => openDialog('vehicle-form-dialog'));
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeDialog(button.dataset.close)));
+document.getElementById('document-action')?.addEventListener('change', event => {
+  const choosingVehicle = event.target.value === 'vehicle_picker';
+  document.getElementById('document-url-field').hidden = choosingVehicle;
+  document.getElementById('document-url').value = '';
+  document.getElementById('document-action-hint').textContent = choosingVehicle
+    ? 'Kartu akan membuka pilihan kendaraan.'
+    : 'Kartu akan membuka tautan dokumen.';
+});
 document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', event => {
   if (event.target === dialog) dialog.close();
 }));
