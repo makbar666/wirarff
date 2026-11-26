@@ -51,6 +51,17 @@ function safeHttpsUrl(value) {
     return url.protocol === 'https:' ? url.href : '';
   } catch { return ''; }
 }
+async function deleteItem(kind, item) {
+  const typeLabel = kind === 'documents' ? 'dokumen' : 'kendaraan';
+  if (!window.confirm(`Hapus ${typeLabel} “${item.title || item.name}”?`)) return;
+  try {
+    await api(kind, { method: 'DELETE', body: JSON.stringify({ id: item.id }) });
+    await loadMasterData();
+  } catch (error) {
+    masterError.textContent = error.message;
+    masterError.hidden = false;
+  }
+}
 function renderDocuments(documents) {
   documentList.replaceChildren();
   const query = searchInput.value.trim().toLowerCase();
@@ -63,6 +74,11 @@ function renderDocuments(documents) {
     const top = node('div', 'card-top');
     top.append(node('span', 'card-number', `${String(item.number).padStart(2, '0')}${item.category ? ` / ${item.category}` : ''}`));
     top.append(node('span', 'card-icon', item.icon || '▤'));
+    const removeButton = node('button', 'delete-item', 'Hapus');
+    removeButton.type = 'button';
+    removeButton.setAttribute('aria-label', `Hapus ${item.title}`);
+    removeButton.addEventListener('click', () => deleteItem('documents', item));
+    top.append(removeButton);
     card.append(top, node('h3', '', item.title), node('p', '', item.description || ''));
     const bottom = node('div', 'card-bottom');
     if (item.actionType === 'vehicle_picker') {
@@ -114,6 +130,11 @@ function renderVehicles(vehicles) {
       link.rel = 'noopener noreferrer';
       row.append(link);
     } else row.append(node('span', 'vehicle-status', 'Belum tersedia'));
+    const removeButton = node('button', 'delete-item vehicle-delete', 'Hapus');
+    removeButton.type = 'button';
+    removeButton.setAttribute('aria-label', `Hapus ${vehicle.name}`);
+    removeButton.addEventListener('click', () => deleteItem('vehicles', vehicle));
+    row.append(removeButton);
     vehicleList.append(row);
   });
 }

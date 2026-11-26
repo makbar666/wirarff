@@ -72,9 +72,12 @@
 .directory-search input::placeholder{color:#99a8b5}
 .directory-search button{border:0;background:none;color:#71859a;font-size:22px;cursor:pointer}
 .search-empty{grid-column:1/-1;padding:30px;background:#fff;border:1px solid #dce5ee;color:#71859a;text-align:center;font-size:13px}
-.loading-dialog{width:auto;min-width:170px;padding:20px 26px;border:1px solid #dce5ee;border-radius:5px;box-shadow:0 16px 48px #102b4b30}
+.loading-dialog{width:max-content;min-width:0;padding:12px 18px;border:1px solid #dce5ee;border-radius:5px;box-shadow:0 16px 48px #102b4b30}
 .loading-dialog::backdrop{background:rgba(9,36,66,.4);backdrop-filter:blur(2px)}
-.loading-content{display:flex;align-items:center;justify-content:center;gap:12px;color:#183c61;font-size:13px;font-weight:700}
-.loading-spinner{width:23px;height:23px;border:3px solid #d9e5ee;border-top-color:#d8252d;border-radius:50%;animation:loading-spin .75s linear infinite}
+.loading-content{display:flex;align-items:center;justify-content:center;gap:9px;color:#183c61;font-size:12px;font-weight:700}
+.loading-spinner{width:19px;height:19px;border:2px solid #d9e5ee;border-top-color:#d8252d;border-radius:50%;animation:loading-spin .75s linear infinite}
+.delete-item{flex:none;padding:5px 7px;border:1px solid #e8c9c9;background:#fff;color:#a6373d;font:700 10px 'DM Sans',sans-serif;cursor:pointer}
+.delete-item:hover,.delete-item:focus-visible{background:#fff0ef;border-color:#d8252d;outline:0}
+.vehicle-delete{margin-left:auto}
 @keyframes loading-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.directory-search{max-width:none;margin-bottom:18px}}

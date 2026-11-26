@@ -18,7 +18,7 @@ export function createHandler({ env = process.env } = {}) {
     const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers });
     try {
       const url = new URL(request.url);
-      if (!['GET', 'POST'].includes(request.method)) throw fail(405, 'Metode tidak didukung.');
+      if (!['GET', 'POST', 'DELETE'].includes(request.method)) throw fail(405, 'Metode tidak didukung.');
       if (request.method !== 'GET' && request.headers.get('origin') !== url.origin) throw fail(403, 'Asal permintaan tidak diizinkan.');
       const path = url.pathname.replace(/^\/api\/?/, '').replace(/\/$/, '');
       const auth = createAuth(request, headers, env);
@@ -73,6 +73,14 @@ export function createHandler({ env = process.env } = {}) {
         return reply({ document }, 201);
       }
 
+      if (path === 'documents' && request.method === 'DELETE') {
+        const input = await request.json();
+        if (typeof input?.id !== 'string' || !input.id || input.id.length > 80) throw fail(400, 'Dokumen tidak valid.');
+        const deleted = await sql.query('DELETE FROM management_documents WHERE id = $1 RETURNING id', [input.id]);
+        if (!deleted.length) throw fail(404, 'Dokumen tidak ditemukan.');
+        return reply({ ok: true });
+      }
+
       if (path === 'vehicles' && request.method === 'POST') {
         const input = await request.json();
         const name = typeof input?.name === 'string' ? input.name.trim() : '';
@@ -82,6 +90,14 @@ export function createHandler({ env = process.env } = {}) {
           VALUES (gen_random_uuid()::text, $1, $2)
           RETURNING id, sort_order AS number, name, url`, [name, vehicleUrl]);
         return reply({ vehicle }, 201);
+      }
+
+      if (path === 'vehicles' && request.method === 'DELETE') {
+        const input = await request.json();
+        if (typeof input?.id !== 'string' || !input.id || input.id.length > 80) throw fail(400, 'Kendaraan tidak valid.');
+        const deleted = await sql.query('DELETE FROM management_vehicles WHERE id = $1 RETURNING id', [input.id]);
+        if (!deleted.length) throw fail(404, 'Kendaraan tidak ditemukan.');
+        return reply({ ok: true });
       }
 
       throw fail(404, 'Endpoint tidak ditemukan.');
