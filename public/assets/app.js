@@ -8,9 +8,11 @@ const masterError = document.getElementById('master-error');
 const searchInput = document.getElementById('document-search');
 const clearSearchButton = document.getElementById('clear-search');
 const loadingDialog = document.getElementById('loading-dialog');
+const toast = document.getElementById('app-toast');
 let allDocuments = [];
 let pendingRequests = 0;
 let resolveDeleteConfirmation = null;
+let toastTimer;
 
 function showPortal(user) {
   const userName = user?.name ?? user?.display_name ?? user?.displayName;
@@ -24,6 +26,16 @@ function showLogin() {
   if (portalApp) portalApp.hidden = true;
   if (loginScreen) loginScreen.hidden = false;
   document.body.className = 'login-body';
+}
+function showToast(message) {
+  document.getElementById('app-toast-message').textContent = message;
+  toast.hidden = false;
+  toast.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+    toast.hidden = true;
+  }, 3000);
 }
 async function api(path, options = {}) {
   pendingRequests++;
@@ -58,6 +70,7 @@ async function deleteItem(kind, item) {
   try {
     await api(kind, { method: 'DELETE', body: JSON.stringify({ id: item.id }) });
     await loadMasterData();
+    showToast(`${typeLabel === 'dokumen' ? 'Dokumen' : 'Kendaraan'} dihapus.`);
   } catch (error) {
     masterError.textContent = error.message;
     masterError.hidden = false;
@@ -87,7 +100,11 @@ function renderDocuments(documents) {
     removeButton.type = 'button';
     removeButton.setAttribute('aria-label', `Hapus ${item.title}`);
     removeButton.addEventListener('click', () => deleteItem('documents', item));
-    top.append(removeButton);
+    const editButton = node('button', 'edit-item', 'Edit');
+    editButton.type = 'button';
+    editButton.setAttribute('aria-label', `Edit ${item.title}`);
+    editButton.addEventListener('click', () => editDocument(item));
+    top.append(editButton, removeButton);
     card.append(top, node('h3', '', item.title), node('p', '', item.description || ''));
     const bottom = node('div', 'card-bottom');
     if (item.actionType === 'vehicle_picker') {
@@ -117,7 +134,7 @@ function renderDocuments(documents) {
   const addBottom = node('div', 'card-bottom');
   const addButton = node('button', 'card-action', 'Tambah dokumen →');
   addButton.type = 'button';
-  addButton.addEventListener('click', () => openDialog('document-form-dialog'));
+  addButton.addEventListener('click', prepareNewDocument);
   addBottom.append(addButton);
   addCard.append(addBottom);
   documentList.append(addCard);
@@ -139,6 +156,11 @@ function renderVehicles(vehicles) {
       link.rel = 'noopener noreferrer';
       row.append(link);
     } else row.append(node('span', 'vehicle-status', 'Belum tersedia'));
+    const editButton = node('button', 'edit-item vehicle-edit', 'Edit');
+    editButton.type = 'button';
+    editButton.setAttribute('aria-label', `Edit ${vehicle.name}`);
+    editButton.addEventListener('click', () => editVehicle(vehicle));
+    row.append(editButton);
     const removeButton = node('button', 'delete-item vehicle-delete', 'Hapus');
     removeButton.type = 'button';
     removeButton.setAttribute('aria-label', `Hapus ${vehicle.name}`);
@@ -161,6 +183,54 @@ async function loadMasterData() {
 }
 function openDialog(id) { document.getElementById(id)?.showModal(); }
 function closeDialog(id) { document.getElementById(id)?.close(); }
+function updateDocumentAction(clearUrl = false) {
+  const choosingVehicle = document.getElementById('document-action').value === 'vehicle_picker';
+  document.getElementById('document-url-field').hidden = choosingVehicle;
+  if (clearUrl) document.getElementById('document-url').value = '';
+  document.getElementById('document-action-hint').textContent = choosingVehicle
+    ? 'Kartu akan membuka pilihan kendaraan.'
+    : 'Kartu akan membuka tautan dokumen.';
+}
+function prepareNewDocument() {
+  const form = document.getElementById('document-form');
+  delete form.dataset.editId;
+  form.dataset.category = '';
+  form.reset();
+  document.getElementById('document-form-title').textContent = 'Tambah dokumen.';
+  form.querySelector('button[type="submit"]').innerHTML = 'Simpan dokumen <span>↗</span>';
+  updateDocumentAction();
+  openDialog('document-form-dialog');
+}
+function editDocument(item) {
+  const form = document.getElementById('document-form');
+  form.dataset.editId = item.id;
+  form.dataset.category = item.category || '';
+  form.elements.title.value = item.title;
+  form.elements.description.value = item.description || '';
+  form.elements.actionType.value = item.actionType;
+  form.elements.url.value = item.url || '';
+  document.getElementById('document-form-title').textContent = 'Edit dokumen.';
+  form.querySelector('button[type="submit"]').innerHTML = 'Simpan perubahan <span>↗</span>';
+  updateDocumentAction();
+  openDialog('document-form-dialog');
+}
+function prepareNewVehicle() {
+  const form = document.getElementById('vehicle-form');
+  delete form.dataset.editId;
+  form.reset();
+  document.getElementById('vehicle-form-title').textContent = 'Tambah kendaraan.';
+  form.querySelector('button[type="submit"]').innerHTML = 'Simpan kendaraan <span>↗</span>';
+  openDialog('vehicle-form-dialog');
+}
+function editVehicle(vehicle) {
+  const form = document.getElementById('vehicle-form');
+  form.dataset.editId = vehicle.id;
+  form.elements.name.value = vehicle.name;
+  form.elements.url.value = vehicle.url || '';
+  document.getElementById('vehicle-form-title').textContent = 'Edit kendaraan.';
+  form.querySelector('button[type="submit"]').innerHTML = 'Simpan perubahan <span>↗</span>';
+  openDialog('vehicle-form-dialog');
+}
 
 loginForm?.addEventListener('submit', async event => {
   event.preventDefault();
@@ -184,7 +254,7 @@ document.getElementById('logout-button')?.addEventListener('click', async () => 
 documentList?.addEventListener('click', event => {
   if (event.target.closest('[data-open-vehicles]')) openDialog('maintenance-dialog');
 });
-document.getElementById('add-vehicle-button')?.addEventListener('click', () => openDialog('vehicle-form-dialog'));
+document.getElementById('add-vehicle-button')?.addEventListener('click', prepareNewVehicle);
 document.getElementById('delete-confirm')?.addEventListener('click', () => document.getElementById('delete-confirm-dialog').close('confirm'));
 document.getElementById('delete-cancel')?.addEventListener('click', () => document.getElementById('delete-confirm-dialog').close('cancel'));
 document.getElementById('delete-confirm-dialog')?.addEventListener('close', event => {
@@ -202,14 +272,7 @@ clearSearchButton?.addEventListener('click', () => {
   searchInput.focus();
 });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeDialog(button.dataset.close)));
-document.getElementById('document-action')?.addEventListener('change', event => {
-  const choosingVehicle = event.target.value === 'vehicle_picker';
-  document.getElementById('document-url-field').hidden = choosingVehicle;
-  document.getElementById('document-url').value = '';
-  document.getElementById('document-action-hint').textContent = choosingVehicle
-    ? 'Kartu akan membuka pilihan kendaraan.'
-    : 'Kartu akan membuka tautan dokumen.';
-});
+document.getElementById('document-action')?.addEventListener('change', () => updateDocumentAction(true));
 document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', event => {
   if (event.target === dialog) dialog.close();
 }));
@@ -222,10 +285,17 @@ document.getElementById('document-form')?.addEventListener('submit', async event
   button.disabled = true;
   error.hidden = true;
   try {
-    await api('documents', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+    const editId = form.dataset.editId;
+    const input = Object.fromEntries(new FormData(form));
+    input.category = form.dataset.category || '';
+    if (editId) input.id = editId;
+    await api('documents', { method: editId ? 'PUT' : 'POST', body: JSON.stringify(input) });
     form.reset();
+    delete form.dataset.editId;
+    delete form.dataset.category;
     closeDialog('document-form-dialog');
     await loadMasterData();
+    showToast(editId ? 'Dokumen diperbarui.' : 'Dokumen ditambahkan.');
   } catch (err) {
     error.textContent = err.message;
     error.hidden = false;
@@ -240,10 +310,15 @@ document.getElementById('vehicle-form')?.addEventListener('submit', async event 
   button.disabled = true;
   error.hidden = true;
   try {
-    await api('vehicles', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+    const editId = form.dataset.editId;
+    const input = Object.fromEntries(new FormData(form));
+    if (editId) input.id = editId;
+    await api('vehicles', { method: editId ? 'PUT' : 'POST', body: JSON.stringify(input) });
     form.reset();
+    delete form.dataset.editId;
     closeDialog('vehicle-form-dialog');
     await loadMasterData();
+    showToast(editId ? 'Kendaraan diperbarui.' : 'Kendaraan ditambahkan.');
   } catch (err) {
     error.textContent = err.message;
     error.hidden = false;
