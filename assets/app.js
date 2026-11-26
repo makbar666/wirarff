@@ -5,6 +5,11 @@ const portalApp = document.getElementById('portal-app');
 const documentList = document.getElementById('document-list');
 const vehicleList = document.getElementById('vehicle-list');
 const masterError = document.getElementById('master-error');
+const searchInput = document.getElementById('document-search');
+const clearSearchButton = document.getElementById('clear-search');
+const loadingDialog = document.getElementById('loading-dialog');
+let allDocuments = [];
+let pendingRequests = 0;
 
 function showPortal(user) {
   const userName = user?.name ?? user?.display_name ?? user?.displayName;
@@ -20,11 +25,18 @@ function showLogin() {
   document.body.className = 'login-body';
 }
 async function api(path, options = {}) {
-  const response = await fetch(`/api/${path}`, { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
-  const data = await response.json().catch(() => null);
-  if (!data || typeof data !== 'object') throw new Error('Server mengirim respons yang tidak valid. Pastikan backend API sudah terpasang.');
-  if (!response.ok) throw new Error(data.error || 'Layanan tidak tersedia. Coba lagi.');
-  return data;
+  pendingRequests++;
+  if (pendingRequests === 1 && loadingDialog && !loadingDialog.open) loadingDialog.showModal();
+  try {
+    const response = await fetch(`/api/${path}`, { credentials: 'same-origin', ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+    const data = await response.json().catch(() => null);
+    if (!data || typeof data !== 'object') throw new Error('Server mengirim respons yang tidak valid. Pastikan backend API sudah terpasang.');
+    if (!response.ok) throw new Error(data.error || 'Layanan tidak tersedia. Coba lagi.');
+    return data;
+  } finally {
+    pendingRequests--;
+    if (pendingRequests === 0 && loadingDialog?.open) loadingDialog.close();
+  }
 }
 
 function node(tag, className, content) {
@@ -41,8 +53,12 @@ function safeHttpsUrl(value) {
 }
 function renderDocuments(documents) {
   documentList.replaceChildren();
-  document.getElementById('document-count').textContent = `${documents.length} MENU TERSEDIA`;
-  for (const item of documents) {
+  const query = searchInput.value.trim().toLowerCase();
+  const filtered = query ? documents.filter(item => `${item.title} ${item.description} ${item.category || ''}`.toLowerCase().includes(query)) : documents;
+  document.getElementById('document-count').textContent = query
+    ? `${filtered.length} DARI ${documents.length} MENU`
+    : `${documents.length} MENU TERSEDIA`;
+  for (const item of filtered) {
     const card = node('article', 'card');
     const top = node('div', 'card-top');
     top.append(node('span', 'card-number', `${String(item.number).padStart(2, '0')}${item.category ? ` / ${item.category}` : ''}`));
@@ -67,6 +83,7 @@ function renderDocuments(documents) {
     card.append(bottom);
     documentList.append(card);
   }
+  if (query && !filtered.length) documentList.append(node('p', 'search-empty', 'Dokumen tidak ditemukan.'));
   const addCard = node('article', 'card add-card');
   const addTop = node('div', 'card-top');
   addTop.append(node('span', 'card-number', 'MASTER DATA'));
@@ -104,7 +121,8 @@ async function loadMasterData() {
   masterError.hidden = true;
   try {
     const data = await api('master-data');
-    renderDocuments(data.documents || []);
+    allDocuments = data.documents || [];
+    renderDocuments(allDocuments);
     renderVehicles(data.vehicles || []);
   } catch (error) {
     masterError.textContent = error.message;
@@ -137,6 +155,16 @@ documentList?.addEventListener('click', event => {
   if (event.target.closest('[data-open-vehicles]')) openDialog('maintenance-dialog');
 });
 document.getElementById('add-vehicle-button')?.addEventListener('click', () => openDialog('vehicle-form-dialog'));
+searchInput?.addEventListener('input', () => {
+  clearSearchButton.hidden = !searchInput.value;
+  renderDocuments(allDocuments);
+});
+clearSearchButton?.addEventListener('click', () => {
+  searchInput.value = '';
+  clearSearchButton.hidden = true;
+  renderDocuments(allDocuments);
+  searchInput.focus();
+});
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closeDialog(button.dataset.close)));
 document.getElementById('document-action')?.addEventListener('change', event => {
   const choosingVehicle = event.target.value === 'vehicle_picker';
