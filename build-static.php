@@ -36,4 +36,10 @@ copy($root . '/assets/members.js', $root . '/public/assets/members.js');
 copy($root . '/assets/password-visibility.js', $root . '/public/assets/password-visibility.js');
 copy($root . '/assets/wirarff-logo.png', $root . '/public/assets/wirarff-logo.png');
 copy($root . '/assets/favicon.svg', $root . '/public/assets/favicon.svg');
+copy($root . '/assets/login-background.jpg', $root . '/public/assets/login-background.jpg');
+copy($root . '/assets/dashboard-background.jpg', $root . '/public/assets/dashboard-background.jpg');
+if (!is_dir($root . '/public/assets/menu-icons')) mkdir($root . '/public/assets/menu-icons', 0775, true);
+foreach (glob($root . '/assets/menu-icons/*.png') ?: [] as $icon) {
+    copy($icon, $root . '/public/assets/menu-icons/' . basename($icon));
+}
 echo "Portal statis dibuat di public/.\n";

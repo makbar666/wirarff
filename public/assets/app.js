@@ -23,7 +23,7 @@ function showPortal(user) {
   if (menuLink) menuLink.hidden = !isAdmin;
   if (usersLink) usersLink.hidden = !isAdmin;
   if (calculatorLink) calculatorLink.hidden = false;
-  document.body.className = 'app';
+  document.body.className = 'app dashboard-view';
   document.title = `Dashboard — ${name} — Yogi Prasetya E.W.`;
 }
 function showLogin() {
@@ -67,7 +67,12 @@ function renderDocuments(documents) {
     const card = node('article', 'card');
     const top = node('div', 'card-top');
     top.append(node('span', 'card-number', `${String(item.number).padStart(2, '0')}${item.category ? ` / ${item.category}` : ''}`));
-    top.append(node('span', 'card-icon', item.icon || '▤'));
+    const icon = node('img', 'card-icon-image');
+    const iconIndex = Math.min(10, Math.max(1, Number(item.number) || 1));
+    icon.src = `assets/menu-icons/menu-${String(iconIndex).padStart(2, '0')}.png`;
+    icon.alt = '';
+    icon.loading = 'lazy';
+    top.append(icon);
     card.append(top, node('h3', '', item.title), node('p', '', item.description || ''));
     const bottom = node('div', 'card-bottom');
     if (item.actionType === 'vehicle_picker') {
