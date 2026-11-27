@@ -100,7 +100,7 @@ function preparePrintReport() {
     }
     const inputs = row.querySelectorAll('input:not([type=file]), textarea');
     tr.append(el('td', inputs[0].value), el('td', inputs[1].value));
-    const notes = inputs[2].value + (index === activities.length-1 ? '\n\n' + document.querySelector('.vehicle-condition textarea').value : ''); tr.append(el('td', notes.trim()));
+    tr.append(el('td', inputs[2].value.trim()));
     const photos = el('td'); photos.className='pdf-photos'; row.querySelectorAll('.report-photo-list img').forEach(img => photos.append(img.cloneNode())); tr.append(photos); body.append(tr);
   });
   table.append(body); output.append(table); document.body.append(output);
