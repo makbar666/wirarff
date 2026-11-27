@@ -17,4 +17,4 @@ $loggedIn = ($_GET['view'] ?? '') === 'dashboard';
  </main><footer class="footer"><span>© <?= date('Y') ?> YOGI PRASETYA E.W.</span><span>MANAGEMENT CENTER <b>•</b> INTERNAL PORTAL</span></footer>
 <dialog id="maintenance-dialog" aria-labelledby="maintenance-title"><div class="dialog-head"><div><span class="eyebrow orange">KENDARAAN</span><h2 id="maintenance-title">Pilih kendaraan.</h2><p>Pilih dokumen pemeliharaan berdasarkan unit.</p></div><button class="close" type="button" aria-label="Tutup dialog">×</button></div><div class="vehicle-list" id="vehicle-list"></div></dialog>
 <dialog id="loading-dialog" class="loading-dialog" aria-label="Memuat"><div class="loading-content"><span class="loading-spinner" aria-hidden="true"></span><span>Memuat…</span></div></dialog>
-<?php endif; ?><script src="assets/app.js"></script></body></html>
+<?php endif; ?><script src="assets/password-visibility.js"></script><script src="assets/app.js"></script></body></html>
