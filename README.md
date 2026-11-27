@@ -53,6 +53,8 @@ node scripts/set-member-role.mjs admin@organisasi.id admin
 
 Perintah kedua menetapkan administrator awal dan hanya perlu dilakukan sekali. Alternatifnya, atur `PORTAL_ADMIN_EMAIL` pada environment Vercel/local; alamat tersebut otomatis mendapat role Admin saat login. Role hanya terdiri dari **Admin** dan **Anggota**. Admin dapat membuka **Pengguna & Role**, membuat user Neon Auth dari halaman tersebut, dan menetapkan role untuk setiap anggota aktif. Akun lama yang bukan Admin dipetakan menjadi Anggota saat migrasi.
 
+Aksi **Hapus** mencabut akses portal dengan menonaktifkan baris di `management_members`; akun Neon Auth tetap tersimpan. Jika email yang sama ditambahkan kembali, akses dipulihkan dan kata sandi Neon Auth yang lama tetap berlaku.
+
 Jangan commit `.env` atau menyimpan connection string di `public/`. Konfigurasi `.env.example` hanya contoh placeholder.
 
 ## Isi portal

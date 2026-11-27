@@ -8,6 +8,7 @@ const memberRows = document.getElementById('member-rows');
 const toast = document.getElementById('app-toast');
 let pendingRequests = 0;
 let roles = [];
+let pendingDeleteMember = null;
 let toastTimer;
 
 async function api(path, options = {}) {
@@ -73,7 +74,14 @@ function renderMembers(members) {
         save.disabled = false;
       }
     });
-    actions.append(save);
+    const remove = node('button', 'delete-item', 'Hapus');
+    remove.type = 'button';
+    remove.addEventListener('click', () => {
+      pendingDeleteMember = member;
+      document.getElementById('user-delete-message').textContent = `Cabut akses portal untuk ${member.name} (${member.email || member.userId})? Akun Neon Auth tetap tersimpan.`;
+      document.getElementById('user-delete-dialog').showModal();
+    });
+    actions.append(save, remove);
     row.append(actions);
     memberRows.append(row);
   });
@@ -91,6 +99,21 @@ document.getElementById('add-user-button').addEventListener('click', () => {
 });
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => document.getElementById(button.dataset.close).close()));
 document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', event => { if (event.target === dialog && dialog.id !== 'loading-dialog') dialog.close(); }));
+document.getElementById('user-delete-cancel').addEventListener('click', () => {
+  pendingDeleteMember = null;
+  document.getElementById('user-delete-dialog').close();
+});
+document.getElementById('user-delete-confirm').addEventListener('click', async () => {
+  if (!pendingDeleteMember) return;
+  const member = pendingDeleteMember;
+  pendingDeleteMember = null;
+  document.getElementById('user-delete-dialog').close();
+  try {
+    await api('members', { method: 'DELETE', body: JSON.stringify({ userId: member.userId }) });
+    await loadMembers();
+    showToast(`Akses ${member.name} dicabut.`);
+  } catch (error) { accessError.textContent = error.message; accessError.hidden = false; }
+});
 userForm.addEventListener('submit', async event => {
   event.preventDefault();
   const button = userForm.querySelector('button[type="submit"]');
@@ -98,11 +121,11 @@ userForm.addEventListener('submit', async event => {
   button.disabled = true;
   userFormError.hidden = true;
   try {
-    await api('members', { method: 'POST', body: JSON.stringify(input) });
+    const result = await api('members', { method: 'POST', body: JSON.stringify(input) });
     userDialog.close();
     userForm.reset();
     await loadMembers();
-    showToast('User berhasil dibuat.');
+    showToast(result.restored ? 'Akses user dipulihkan; kata sandi lama tetap berlaku.' : 'User berhasil dibuat.');
   } catch (error) {
     userFormError.textContent = error.message;
     userFormError.hidden = false;

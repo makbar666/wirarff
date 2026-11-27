@@ -113,7 +113,16 @@ export function createHandler({ env = process.env } = {}) {
         if (password.length < 12 || password.length > 128) throw fail(400, 'Kata sandi harus terdiri dari 12–128 karakter.');
         if (!['admin', 'member'].includes(roleId)) throw fail(400, 'Role harus Admin atau Anggota.');
         const [existing] = await sql.query('SELECT id FROM neon_auth."user" WHERE lower(email)=lower($1)', [email]);
-        if (existing) throw fail(409, 'Email sudah terdaftar di Neon Auth.');
+        if (existing) {
+          const [member] = await sql.query('SELECT enabled FROM management_members WHERE user_id=$1', [existing.id]);
+          if (member?.enabled) throw fail(409, 'Email sudah terdaftar sebagai user aktif.');
+          if (member) {
+            await sql.query('UPDATE management_members SET display_name=$1, enabled=true, role_id=$2 WHERE user_id=$3', [name, roleId, existing.id]);
+            return reply({ ok: true, restored: true });
+          }
+          await sql.query('INSERT INTO management_members (user_id, display_name, enabled, role_id) VALUES ($1, $2, true, $3)', [existing.id, name, roleId]);
+          return reply({ ok: true, restored: true });
+        }
         const provisioningAuth = createProvisioningAuth(request, url.origin, env);
         const result = await provisioningAuth.signUp.email({ email, name, password });
         const createdUser = result.data?.user;
@@ -121,6 +130,16 @@ export function createHandler({ env = process.env } = {}) {
         await sql.query(`INSERT INTO management_members (user_id, display_name, enabled, role_id)
           VALUES ($1, $2, true, $3)`, [createdUser.id, name, roleId]);
         return reply({ ok: true }, 201);
+      }
+      if (path === 'members' && request.method === 'DELETE') {
+        requireUserManager();
+        const input = await request.json();
+        const memberId = typeof input?.userId === 'string' ? input.userId : '';
+        if (!memberId || memberId.length > 120) throw fail(400, 'Pengguna tidak valid.');
+        if (memberId === userId) throw fail(400, 'Admin tidak dapat mencabut akses akunnya sendiri.');
+        const [member] = await sql.query('UPDATE management_members SET enabled=false WHERE user_id=$1 AND enabled=true RETURNING user_id', [memberId]);
+        if (!member) throw fail(404, 'User aktif tidak ditemukan.');
+        return reply({ ok: true });
       }
       if (path === 'members' && request.method === 'PUT') {
         requireUserManager();
