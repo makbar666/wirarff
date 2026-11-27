@@ -35,6 +35,8 @@ copy($root . '/assets/master.js', $root . '/public/assets/master.js');
 copy($root . '/assets/members.js', $root . '/public/assets/members.js');
 copy($root . '/assets/password-visibility.js', $root . '/public/assets/password-visibility.js');
 copy($root . '/assets/wirarff-logo.png', $root . '/public/assets/wirarff-logo.png');
+copy($root . '/assets/wap-logo.png', $root . '/public/assets/wap-logo.png');
+copy($root . '/assets/weda-bay-arff-seal.png', $root . '/public/assets/weda-bay-arff-seal.png');
 copy($root . '/assets/favicon.svg', $root . '/public/assets/favicon.svg');
 copy($root . '/assets/login-background.jpg', $root . '/public/assets/login-background.jpg');
 copy($root . '/assets/dashboard-background.jpg', $root . '/public/assets/dashboard-background.jpg');

@@ -176,3 +176,15 @@ body.dashboard-view{min-height:100vh;background:#06275b url('/assets/dashboard-b
 .branded-admin .directory{margin:32px auto;padding:28px;background:rgba(240,247,255,.95);border:1px solid rgba(255,255,255,.8);border-radius:14px;box-shadow:0 14px 42px rgba(0,17,55,.25)}
 .branded-admin .master-error{color:#9b262c}
 @media(max-width:600px){.login-body .login-box{padding:20px 20px 21px}.branded-admin .directory{margin:18px auto;padding:18px 14px}.branded-admin .topbar{padding:8px 12px}.branded-admin .top-right{gap:6px;flex-wrap:wrap;justify-content:flex-end}.branded-admin .top-right .master-menu-link,.branded-admin .logout{padding:8px 9px;font-size:10px}}
+
+/* Weda Bay identity marks */
+.login-body .login-layout{position:relative}
+.login-brand-logos{position:absolute;z-index:2;top:22px;left:24px;right:24px;display:flex;align-items:flex-start;justify-content:space-between;pointer-events:none}
+.login-brand-logos .wap-logo{width:190px;height:auto;max-height:86px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,20,55,.35))}
+.login-brand-logos .arff-seal{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,20,55,.35))}
+.dashboard-view .footer{display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:none;margin:20px auto 0;padding:16px 24px 32px;border:0}
+.dashboard-view .footer>span{display:none}
+.dashboard-view .portal-logos{width:100%;display:flex;align-items:center;justify-content:center;gap:36px}
+.dashboard-view .portal-logos .wap-logo{width:190px;height:auto;max-height:86px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,20,55,.35))}
+.dashboard-view .portal-logos .arff-seal{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,20,55,.35))}
+
