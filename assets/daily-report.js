@@ -25,7 +25,7 @@ document.getElementById('print-report').addEventListener('click', async () => {
   button.disabled = true;
   button.textContent = 'Menyiapkan PDF…';
   const frame = document.createElement('iframe');
-  frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1400px;height:1000px;border:0';
+  frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1000px;height:1000px;border:0';
   try {
     preparePrintReport();
     document.body.append(frame);
@@ -42,13 +42,13 @@ document.getElementById('print-report').addEventListener('click', async () => {
         }
       } catch { /* External font stylesheet is optional. */ }
     }
-    style.textContent = rules.join('\n') + '\nbody{margin:0!important;padding:0!important;width:1400px!important}#report-print-output{display:block!important;padding:0}';
+    style.textContent = rules.join('\n') + '\nbody{margin:0!important;padding:0!important;width:1000px!important}#report-print-output{display:block!important;padding:0}';
     doc.head.append(style);
     doc.body.append(doc.importNode(document.getElementById('report-print-output'), true));
     await Promise.all([...doc.images].map(img => img.decode().catch(() => {})));
     const canvas = await window.html2canvas(doc.getElementById('report-print-output'), { scale:2, backgroundColor:'#ffffff', logging:false });
-    const pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
-    const width = 281, height = 194;
+    const pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const width = 194, height = 281;
     const sliceHeight = Math.floor(canvas.width * height / width);
     for (let y = 0; y < canvas.height; y += sliceHeight) {
       if (y) pdf.addPage();
