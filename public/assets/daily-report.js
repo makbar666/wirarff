@@ -44,7 +44,17 @@ document.addEventListener('change', event => {
     image.alt = file.name;
     const caption = document.createElement('figcaption');
     caption.textContent = file.name;
-    figure.append(image, caption);
+    const removePhoto = document.createElement('button');
+    removePhoto.type = 'button';
+    removePhoto.className = 'report-photo-remove';
+    removePhoto.textContent = '×';
+    removePhoto.setAttribute('aria-label', `Hapus foto ${file.name}`);
+    removePhoto.title = 'Hapus foto';
+    removePhoto.addEventListener('click', () => {
+      URL.revokeObjectURL(image.src);
+      figure.remove();
+    });
+    figure.append(image, caption, removePhoto);
     list.append(figure);
   }
   event.target.value = '';

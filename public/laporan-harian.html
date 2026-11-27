@@ -13,7 +13,7 @@
   <div id="report-content" hidden>
     <nav class="report-toolbar" aria-label="Aksi laporan">
       <a class="report-back" href="/">← Kembali ke dashboard</a>
-      <div><button type="button" id="add-personnel" class="report-secondary">+ Personel</button><button type="button" id="add-activity" class="report-secondary">+ Kegiatan</button><button type="button" id="print-report" class="report-print">Cetak / Simpan PDF</button></div>
+      <div><button type="button" id="print-report" class="report-print">Cetak / Simpan PDF</button></div>
     </nav>
     <main class="report-sheet">
       <header class="report-heading">
@@ -24,11 +24,12 @@
       <section class="report-meta" aria-label="Informasi laporan">
         <label>Hari / tanggal<input id="report-date" type="date" required></label>
         <label>Regu<select id="report-team"><option>ALPHA</option><option>BRAVO</option><option>CHARLIE</option><option>DELTA</option></select></label>
-        <label>Shift<select id="report-shift"><option value="PAGI SIANG">PAGI SIANG</option><option value="MALAM">MALAM</option></select></label>
+        <label>Shift<input id="report-shift" type="text" value="PAGI SIANG" maxlength="100" placeholder="Masukkan shift"></label>
         <label>Jam dinas<input id="report-hours" value="06.00 - 17.00 WIB"></label>
       </section>
       <section class="report-section">
         <h2>Personel bertugas</h2>
+        <div class="report-section-actions screen-only"><button type="button" id="add-personnel" class="report-secondary">+ Personel</button></div>
         <div class="report-table-wrap"><table class="report-table personnel-table"><thead><tr><th>No</th><th>Personel</th><th>Posisi M</th><th>Posisi O</th><th>Posisi +</th><th class="screen-only">Kelola</th></tr></thead><tbody id="personnel-rows"></tbody></table></div>
         <div class="report-summary">
           <div><h3>Rekap personel</h3><label>On duty<input type="number" min="0" value="7"></label><label>Dinas bantuan<input type="number" min="0" value="3"></label><label>Cuti<input type="number" min="0" value="0"></label><label>Sakit<input type="number" min="0" value="0"></label><label>Ijin<input type="number" min="0" value="0"></label><label>Jumlah<input type="number" min="0" value="10"></label></div>
@@ -37,6 +38,7 @@
       </section>
       <section class="report-section">
         <h2>Kegiatan dan dokumentasi</h2>
+        <div class="report-section-actions screen-only"><button type="button" id="add-activity" class="report-secondary">+ Kegiatan</button></div>
         <div class="report-table-wrap"><table class="report-table activity-table"><thead><tr><th>Waktu</th><th>Kegiatan</th><th>Keterangan</th><th>Dokumentasi</th><th class="screen-only">Kelola</th></tr></thead><tbody id="activity-rows"></tbody></table></div>
       </section>
       <section class="report-section vehicle-condition">
