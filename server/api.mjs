@@ -117,7 +117,7 @@ export function createHandler({ env = process.env } = {}) {
         requireUserManager();
         const [members, roles] = await Promise.all([
           sql.query(`SELECT m.user_id AS "userId", m.display_name AS name, m.enabled, m.role_id AS "roleId", u.email
-            FROM management_members m LEFT JOIN neon_auth."user" u ON u.id=m.user_id WHERE m.enabled=true ORDER BY lower(m.display_name)`),
+            FROM management_members m LEFT JOIN neon_auth."user" u ON u.id::text=m.user_id WHERE m.enabled=true ORDER BY lower(m.display_name)`),
           sql.query(`SELECT id, name, can_manage_menus AS "canManageMenus", can_manage_users AS "canManageUsers"
             FROM management_roles ORDER BY is_system DESC, name`)
         ]);
