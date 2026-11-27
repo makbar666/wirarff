@@ -101,7 +101,6 @@ function renderTable() {
     const nameCell = node('td', 'table-name', record.name);
     if (record.description) nameCell.append(node('small', '', record.description));
     row.append(nameCell);
-    row.append(node('td', '', record.category || '—'));
     row.append(node('td', '', record.kind === 'vehicles' ? (record.url ? 'Buka tautan' : '—') : record.actionType === 'vehicle_picker' ? 'Pilihan kendaraan' : 'Buka tautan'));
     const urlCell = document.createElement('td');
     if (safeHttpsUrl(record.url)) {
