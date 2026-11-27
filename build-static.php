@@ -23,6 +23,7 @@ if (!is_dir($root . '/public/assets')) mkdir($root . '/public/assets', 0775, tru
 file_put_contents($root . '/public/index.html', $html);
 file_put_contents($root . '/public/master-menu.html', $master);
 copy($root . '/calculator.html', $root . '/public/kalkulator.html');
+copy($root . '/daily-report.html', $root . '/public/laporan-harian.html');
 $members = (static function () use ($root): string {
     ob_start();
     include $root . DIRECTORY_SEPARATOR . 'members.php';
@@ -31,6 +32,7 @@ $members = (static function () use ($root): string {
 file_put_contents($root . '/public/master-users.html', $members);
 copy($root . '/assets/style.css', $root . '/public/assets/style.css');
 copy($root . '/assets/app.js', $root . '/public/assets/app.js');
+copy($root . '/assets/daily-report.js', $root . '/public/assets/daily-report.js');
 copy($root . '/assets/master.js', $root . '/public/assets/master.js');
 copy($root . '/assets/members.js', $root . '/public/assets/members.js');
 copy($root . '/assets/password-visibility.js', $root . '/public/assets/password-visibility.js');

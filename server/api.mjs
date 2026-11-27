@@ -51,6 +51,9 @@ export function createHandler({ env = process.env } = {}) {
   const ensureDocumentOptions = sql => {
     documentOptionsReady ||= sql.query(`ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS option_vehicle_ids text[] NOT NULL DEFAULT '{}'`)
       .then(() => sql.query(`ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS options jsonb NOT NULL DEFAULT '[]'::jsonb`))
+      .then(() => sql.query(`ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS page_key text NOT NULL DEFAULT ''`))
+      .then(() => sql.query(`ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_action_type_check`))
+      .then(() => sql.query(`ALTER TABLE management_documents ADD CONSTRAINT management_documents_action_type_check CHECK (action_type IN ('link', 'vehicle_picker', 'internal_page'))`))
       .catch(error => { documentOptionsReady = null; throw error; });
     return documentOptionsReady;
   };
@@ -103,7 +106,7 @@ export function createHandler({ env = process.env } = {}) {
       if (path === 'master-data' && request.method === 'GET') {
         await ensureDocumentOptions(sql);
         const [documents, vehicles] = await Promise.all([
-          sql.query(`SELECT d.id, d.number, d.title, d.description, d.category, d.url, d.action_type AS "actionType", d.icon,
+          sql.query(`SELECT d.id, d.number, d.title, d.description, d.category, d.url, d.page_key AS "pageKey", d.action_type AS "actionType", d.icon,
             CASE WHEN jsonb_array_length(d.options) > 0 THEN d.options
               ELSE COALESCE((SELECT jsonb_agg(jsonb_build_object('label', v.name, 'url', v.url) ORDER BY v.sort_order)
                 FROM management_vehicles v WHERE v.id=ANY(d.option_vehicle_ids)), '[]'::jsonb) END AS options
@@ -215,7 +218,9 @@ export function createHandler({ env = process.env } = {}) {
         const category = typeof input?.category === 'string' ? input.category.trim().toUpperCase() : '';
         const actionType = input?.actionType;
         if (!title || title.length > 160 || description.length > 500 || category.length > 60) throw fail(400, 'Nama atau deskripsi dokumen tidak valid.');
-        if (!['link', 'vehicle_picker'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
+        if (!['link', 'vehicle_picker', 'internal_page'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
+        const pageKey = actionType === 'internal_page' ? input?.pageKey : '';
+        if (actionType === 'internal_page' && pageKey !== 'daily_report') throw fail(400, 'Halaman internal tidak valid.');
         const options = input?.options;
         if (!Array.isArray(options) || options.length > 100) throw fail(400, 'Pilihan kendaraan tidak valid.');
         const normalizedOptions = options.map(option => {
@@ -225,11 +230,11 @@ export function createHandler({ env = process.env } = {}) {
           return { label, url };
         });
         if (actionType === 'vehicle_picker' && normalizedOptions.length === 0) throw fail(400, 'Tambahkan minimal satu pilihan kendaraan.');
-        const documentUrl = httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen');
-        const [document] = await sql.query(`INSERT INTO management_documents (id, title, description, category, url, action_type, icon, options)
-          VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, '▤', $6::jsonb)
-          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, options`,
-        [title, description, category, documentUrl, actionType, JSON.stringify(normalizedOptions)]);
+        const documentUrl = actionType === 'link' ? httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen') : '';
+        const [document] = await sql.query(`INSERT INTO management_documents (id, title, description, category, url, action_type, page_key, icon, options)
+          VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6, '▤', $7::jsonb)
+          RETURNING id, number, title, description, category, url, page_key AS "pageKey", action_type AS "actionType", icon, options`,
+        [title, description, category, documentUrl, actionType, pageKey, JSON.stringify(normalizedOptions)]);
         return reply({ document }, 201);
       }
 
@@ -263,7 +268,9 @@ export function createHandler({ env = process.env } = {}) {
         const category = typeof input?.category === 'string' ? input.category.trim().toUpperCase() : '';
         const actionType = input?.actionType;
         if (!id || id.length > 80 || !title || title.length > 160 || description.length > 500 || category.length > 60) throw fail(400, 'Data dokumen tidak valid.');
-        if (!['link', 'vehicle_picker'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
+        if (!['link', 'vehicle_picker', 'internal_page'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
+        const pageKey = actionType === 'internal_page' ? input?.pageKey : '';
+        if (actionType === 'internal_page' && pageKey !== 'daily_report') throw fail(400, 'Halaman internal tidak valid.');
         const options = input?.options;
         if (!Array.isArray(options) || options.length > 100) throw fail(400, 'Pilihan kendaraan tidak valid.');
         const normalizedOptions = options.map(option => {
@@ -273,11 +280,11 @@ export function createHandler({ env = process.env } = {}) {
           return { label, url };
         });
         if (actionType === 'vehicle_picker' && normalizedOptions.length === 0) throw fail(400, 'Tambahkan minimal satu pilihan kendaraan.');
-        const documentUrl = httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen');
-        const [document] = await sql.query(`UPDATE management_documents SET title=$1, description=$2, category=$3, url=$4, action_type=$5, options=$6::jsonb
-          WHERE id=$7 AND enabled=true
-          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, options`,
-        [title, description, category, documentUrl, actionType, JSON.stringify(normalizedOptions), id]);
+        const documentUrl = actionType === 'link' ? httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen') : '';
+        const [document] = await sql.query(`UPDATE management_documents SET title=$1, description=$2, category=$3, url=$4, action_type=$5, page_key=$6, options=$7::jsonb
+          WHERE id=$8 AND enabled=true
+          RETURNING id, number, title, description, category, url, page_key AS "pageKey", action_type AS "actionType", icon, options`,
+        [title, description, category, documentUrl, actionType, pageKey, JSON.stringify(normalizedOptions), id]);
         if (!document) throw fail(404, 'Dokumen tidak ditemukan.');
         return reply({ document });
       }

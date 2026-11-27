@@ -45,7 +45,7 @@ function showToast(message) {
 }
 function renderTable() {
   const rows = [
-    ...records.documents.map(item => ({ kind: 'documents', type: 'Dokumen', id: item.id, number: item.number, name: item.title, description: item.description, category: item.category, actionType: item.actionType, url: item.url, item })),
+    ...records.documents.map(item => ({ kind: 'documents', type: 'Dokumen', id: item.id, number: item.number, name: item.title, description: item.description, category: item.category, actionType: item.actionType, pageKey: item.pageKey, url: item.url, item })),
     ...records.vehicles.map(item => ({ kind: 'vehicles', type: 'Kendaraan', id: item.id, number: item.number, name: item.name, description: '', category: '', actionType: item.url ? 'link' : '', url: item.url, item }))
   ];
   masterRows.replaceChildren();
@@ -101,9 +101,13 @@ function renderTable() {
     const nameCell = node('td', 'table-name', record.name);
     if (record.description) nameCell.append(node('small', '', record.description));
     row.append(nameCell);
-    row.append(node('td', '', record.kind === 'vehicles' ? (record.url ? 'Buka tautan' : '—') : record.actionType === 'vehicle_picker' ? 'Pilihan kendaraan' : 'Buka tautan'));
+    row.append(node('td', '', record.kind === 'vehicles' ? (record.url ? 'Buka tautan' : '—') : record.actionType === 'vehicle_picker' ? 'Opsi pilihan' : record.actionType === 'internal_page' ? 'Buka halaman' : 'Buka tautan'));
     const urlCell = document.createElement('td');
-    if (safeHttpsUrl(record.url)) {
+    if (record.actionType === 'internal_page' && record.pageKey === 'daily_report') {
+      const link = node('a', 'table-link', 'Laporan harian ↗');
+      link.href = '/laporan-harian.html';
+      urlCell.append(link);
+    } else if (safeHttpsUrl(record.url)) {
       const link = node('a', 'table-link', 'Buka ↗');
       link.href = safeHttpsUrl(record.url);
       link.target = '_blank';
@@ -139,15 +143,17 @@ function updateFormMode(clearUrl = false) {
   const kind = recordForm.elements.kind.value;
   const isVehicle = kind === 'vehicle';
   const isPicker = !isVehicle && recordForm.elements.actionType.value === 'vehicle_picker';
+  const isInternalPage = !isVehicle && recordForm.elements.actionType.value === 'internal_page';
   document.getElementById('document-fields').hidden = isVehicle;
   document.getElementById('record-name-label').textContent = isVehicle ? 'Nama kendaraan' : 'Nama dokumen';
   document.getElementById('record-url-label').textContent = isVehicle ? 'URL dokumen kendaraan (opsional)' : 'URL HTTPS (opsional)';
-  document.getElementById('record-url-field').hidden = isPicker;
+  document.getElementById('record-url-field').hidden = isPicker || isInternalPage;
+  document.getElementById('internal-page-field').hidden = isVehicle || !isInternalPage;
   document.getElementById('document-options-field').hidden = isVehicle || !isPicker;
   if (isPicker && !document.getElementById('document-options').children.length) addDocumentOption();
   document.getElementById('record-action-hint').hidden = isVehicle;
   if (clearUrl) document.getElementById('record-url').value = '';
-  document.getElementById('record-action-hint').textContent = isPicker ? 'Kartu akan membuka opsi pilihan kendaraan.' : 'Kartu akan membuka tautan dokumen.';
+  document.getElementById('record-action-hint').textContent = isPicker ? 'Kartu akan membuka opsi pilihan kendaraan.' : isInternalPage ? 'Kartu akan membuka halaman di dalam portal.' : 'Kartu akan membuka tautan dokumen.';
 }
 function addDocumentOption(option = {}) {
   const container = document.getElementById('document-options');
@@ -173,6 +179,7 @@ function openNew() {
   recordForm.elements.kind.disabled = false;
   recordForm.elements.kind.value = 'document';
   recordForm.elements.actionType.value = 'link';
+  recordForm.elements.pageKey.value = 'daily_report';
   renderDocumentOptions([]);
   document.getElementById('record-dialog-title').textContent = 'Tambah data.';
   recordForm.querySelector('button[type="submit"]').innerHTML = 'Simpan data <span>↗</span>';
@@ -193,6 +200,7 @@ function openEdit(record) {
     recordForm.dataset.category = record.category || '';
     recordForm.elements.description.value = record.description || '';
     recordForm.elements.actionType.value = record.actionType;
+    recordForm.elements.pageKey.value = record.pageKey || 'daily_report';
     renderDocumentOptions(record.item.options || []);
   }
   document.getElementById('record-dialog-title').textContent = record.kind === 'vehicles' ? 'Edit kendaraan.' : 'Edit dokumen.';
@@ -246,7 +254,7 @@ recordForm.addEventListener('submit', async event => {
       path = 'documents';
       const actionType = recordForm.elements.actionType.value;
       const options = actionType === 'vehicle_picker' ? [...recordForm.querySelectorAll('.document-option-row')].map(row => ({ label: row.querySelector('[name="optionLabel"]').value.trim(), url: row.querySelector('[name="optionUrl"]').value.trim() })) : [];
-      input = { title: recordForm.elements.name.value, description: recordForm.elements.description.value, category: recordForm.dataset.category || '', actionType, url, options };
+      input = { title: recordForm.elements.name.value, description: recordForm.elements.description.value, category: recordForm.dataset.category || '', actionType, pageKey: recordForm.elements.pageKey.value, url, options };
     }
     if (isEdit) input.id = recordForm.dataset.editId;
     await api(path, { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(input) });

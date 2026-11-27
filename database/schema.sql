@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS management_documents (
     description text NOT NULL DEFAULT '' CHECK (length(description) <= 500),
     category text NOT NULL DEFAULT '',
     url text NOT NULL DEFAULT '',
-    action_type text NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'vehicle_picker')),
+    action_type text NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'vehicle_picker', 'internal_page')),
+    page_key text NOT NULL DEFAULT '',
     option_vehicle_ids text[] NOT NULL DEFAULT '{}',
     options jsonb NOT NULL DEFAULT '[]'::jsonb,
     icon text NOT NULL DEFAULT '▤',
@@ -46,6 +47,10 @@ CREATE TABLE IF NOT EXISTS management_documents (
 
 ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS option_vehicle_ids text[] NOT NULL DEFAULT '{}';
 ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS options jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS page_key text NOT NULL DEFAULT '';
+ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_action_type_check;
+ALTER TABLE management_documents ADD CONSTRAINT management_documents_action_type_check
+    CHECK (action_type IN ('link', 'vehicle_picker', 'internal_page'));
 
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_check;
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_length_check;

@@ -81,6 +81,10 @@ function renderDocuments(documents) {
       button.dataset.openVehicles = 'true';
       button.dataset.vehicleOptions = JSON.stringify(item.options || []);
       bottom.append(button);
+    } else if (item.actionType === 'internal_page' && item.pageKey === 'daily_report') {
+      const link = node('a', 'card-action', 'Buka halaman →');
+      link.href = '/laporan-harian.html';
+      bottom.append(link);
     } else if (safeHttpsUrl(item.url)) {
       const link = node('a', 'card-action', 'Buka dokumen ↗');
       link.href = safeHttpsUrl(item.url);
