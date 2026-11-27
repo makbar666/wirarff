@@ -18,7 +18,7 @@ $master = (static function () use ($root): string {
     include $root . DIRECTORY_SEPARATOR . 'master.php';
     return (string) ob_get_clean();
 })();
-$html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin"><title>Masuk — Yogi Prasetya E.W.</title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=1"><link rel="stylesheet" href="assets/style.css"></head><body class="login-body"><div id="login-screen">' . $login . '</div><div id="portal-app" hidden>' . $dashboard . '</div><script src="assets/password-visibility.js"></script><script src="assets/app.js"></script></body></html>';
+$html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=1280"><meta name="referrer" content="strict-origin-when-cross-origin"><title>Masuk — Yogi Prasetya E.W.</title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=1"><link rel="stylesheet" href="assets/style.css"></head><body class="login-body"><div id="login-screen">' . $login . '</div><div id="portal-app" hidden>' . $dashboard . '</div><script src="assets/password-visibility.js"></script><script src="assets/app.js"></script></body></html>';
 if (!is_dir($root . '/public/assets')) mkdir($root . '/public/assets', 0775, true);
 file_put_contents($root . '/public/index.html', $html);
 file_put_contents($root . '/public/master-menu.html', $master);

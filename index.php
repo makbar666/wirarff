@@ -4,7 +4,7 @@ if (!function_exists('e')) { function e($value) { return htmlspecialchars((strin
 if (!function_exists('valid_url')) { function valid_url($url) { return is_string($url) && filter_var($url, FILTER_VALIDATE_URL) && parse_url($url, PHP_URL_SCHEME) === 'https'; } }
 $loggedIn = ($_GET['view'] ?? '') === 'dashboard';
 ?>
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?= $loggedIn ? 'Dashboard' : 'Masuk' ?> — <?= e(PORTAL_NAME) ?></title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=1"><link rel="stylesheet" href="assets/style.css"></head>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=1280"><title><?= $loggedIn ? 'Dashboard' : 'Masuk' ?> — <?= e(PORTAL_NAME) ?></title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg?v=1"><link rel="stylesheet" href="assets/style.css"></head>
 <body class="<?= $loggedIn ? 'app' : 'login-body' ?>">
 <?php if (!$loggedIn): ?>
 <main class="login-layout">
