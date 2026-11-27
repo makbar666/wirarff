@@ -9,6 +9,7 @@ const toast = document.getElementById('app-toast');
 let pendingRequests = 0;
 let records = { documents: [], vehicles: [] };
 let pendingDelete = null;
+let draggedDocumentId = null;
 let toastTimer;
 
 async function api(path, options = {}) {
@@ -51,6 +52,50 @@ function renderTable() {
   document.getElementById('table-empty').hidden = rows.length > 0;
   rows.forEach((record, index) => {
     const row = document.createElement('tr');
+    if (record.kind === 'documents') {
+      row.dataset.documentId = record.id;
+      row.draggable = true;
+      row.classList.add('sortable-row');
+      row.title = 'Tarik untuk mengubah posisi';
+      row.addEventListener('dragstart', event => {
+        draggedDocumentId = record.id;
+        row.classList.add('is-dragging');
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', record.id);
+      });
+      row.addEventListener('dragend', () => {
+        draggedDocumentId = null;
+        row.classList.remove('is-dragging');
+        masterRows.querySelectorAll('.drop-before').forEach(item => item.classList.remove('drop-before'));
+      });
+      row.addEventListener('dragover', event => {
+        if (!draggedDocumentId || draggedDocumentId === record.id) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        masterRows.querySelectorAll('.drop-before').forEach(item => item.classList.remove('drop-before'));
+        row.classList.add('drop-before');
+      });
+      row.addEventListener('drop', async event => {
+        event.preventDefault();
+        const movingId = event.dataTransfer.getData('text/plain') || draggedDocumentId;
+        if (!movingId || movingId === record.id) return;
+        const movingRow = masterRows.querySelector(`[data-document-id="${CSS.escape(movingId)}"]`);
+        if (!movingRow) return;
+        const bounds = row.getBoundingClientRect();
+        const insertAfter = event.clientY > bounds.top + bounds.height / 2;
+        masterRows.insertBefore(movingRow, insertAfter ? row.nextSibling : row);
+        const ids = [...masterRows.querySelectorAll('[data-document-id]')].map(item => item.dataset.documentId);
+        try {
+          await api('documents/reorder', { method: 'POST', body: JSON.stringify({ ids }) });
+          await loadMasterData();
+          showToast('Urutan dokumen berhasil disimpan.');
+        } catch (error) {
+          await loadMasterData();
+          masterError.textContent = error.message;
+          masterError.hidden = false;
+        }
+      });
+    }
     row.append(node('td', 'table-number', String(index + 1).padStart(2, '0')));
     row.append(node('td', '', record.type));
     const nameCell = node('td', 'table-name', record.name);

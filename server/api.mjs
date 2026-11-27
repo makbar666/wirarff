@@ -212,6 +212,26 @@ export function createHandler({ env = process.env } = {}) {
         return reply({ document }, 201);
       }
 
+      if (path === 'documents/reorder' && request.method === 'POST') {
+        requireMenuManager();
+        const input = await request.json();
+        const ids = input?.ids;
+        if (!Array.isArray(ids) || ids.length > 500 || ids.some(id => typeof id !== 'string' || !id || id.length > 80) || new Set(ids).size !== ids.length) {
+          throw fail(400, 'Urutan dokumen tidak valid.');
+        }
+        const current = await sql.query('SELECT id, number FROM management_documents WHERE enabled=true ORDER BY number');
+        const currentIds = new Set(current.map(row => row.id));
+        if (ids.length !== current.length || ids.some(id => !currentIds.has(id))) throw fail(409, 'Daftar dokumen berubah. Muat ulang halaman lalu coba lagi.');
+        if (ids.length > 0) {
+          const positions = current.map(row => row.number);
+          await sql.transaction(txn => [
+            txn`UPDATE management_documents SET number = number + (SELECT COALESCE(MAX(number), 0) + ${ids.length + 1} FROM management_documents) WHERE id = ANY(${ids}::text[])`,
+            txn`UPDATE management_documents AS document SET number = ordered.number FROM unnest(${ids}::text[], ${positions}::int[]) AS ordered(id, number) WHERE document.id = ordered.id`
+          ]);
+        }
+        return reply({ ok: true });
+      }
+
       if (path === 'documents' && request.method === 'PUT') {
         requireMenuManager();
         const input = await request.json();
