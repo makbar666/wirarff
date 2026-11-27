@@ -18,10 +18,52 @@ function addActivity() {
 
 document.getElementById('add-personnel').addEventListener('click', addPersonnel);
 document.getElementById('add-activity').addEventListener('click', addActivity);
-document.getElementById('print-report').addEventListener('click', () => {
+document.getElementById('print-report').addEventListener('click', async () => {
   const date = document.getElementById('report-date');
   if (!date.value) { date.reportValidity(); return; }
-  window.print();
+  const button = document.getElementById('print-report');
+  button.disabled = true;
+  button.textContent = 'Menyiapkan PDF…';
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed;left:-20000px;top:0;width:1400px;height:1000px;border:0';
+  try {
+    preparePrintReport();
+    document.body.append(frame);
+    const doc = frame.contentDocument;
+    doc.open(); doc.write('<!doctype html><html><head></head><body></body></html>'); doc.close();
+    const base = doc.createElement('base'); base.href = document.baseURI; doc.head.append(base);
+    const style = doc.createElement('style');
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      try {
+        for (const rule of sheet.cssRules) {
+          if (rule.type === CSSRule.MEDIA_RULE && rule.conditionText === 'print') rules.push([...rule.cssRules].map(item => item.cssText).join('\n'));
+          else if (rule.type === CSSRule.STYLE_RULE) rules.push(rule.cssText);
+        }
+      } catch { /* External font stylesheet is optional. */ }
+    }
+    style.textContent = rules.join('\n') + '\nbody{margin:0!important;padding:0!important;width:1400px!important}#report-print-output{display:block!important;padding:0}';
+    doc.head.append(style);
+    doc.body.append(doc.importNode(document.getElementById('report-print-output'), true));
+    await Promise.all([...doc.images].map(img => img.decode().catch(() => {})));
+    const canvas = await window.html2canvas(doc.getElementById('report-print-output'), { scale:2, backgroundColor:'#ffffff', logging:false });
+    const pdf = new window.jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+    const width = 281, height = 194;
+    const sliceHeight = Math.floor(canvas.width * height / width);
+    for (let y = 0; y < canvas.height; y += sliceHeight) {
+      if (y) pdf.addPage();
+      const slice = document.createElement('canvas'); slice.width = canvas.width; slice.height = Math.min(sliceHeight, canvas.height-y);
+      slice.getContext('2d').drawImage(canvas, 0,y,canvas.width,slice.height,0,0,canvas.width,slice.height);
+      pdf.addImage(slice.toDataURL('image/png'), 'PNG',8,8,width,slice.height*width/canvas.width);
+    }
+    pdf.save(`Laporan-Harian-${date.value}.pdf`);
+  } catch (error) {
+    const status = document.getElementById('pdf-status');
+    status.textContent = 'PDF gagal dibuat. Silakan coba kembali.';
+    status.hidden = false;
+  } finally {
+    frame.remove(); button.disabled = false; button.textContent = 'Download PDF';
+  }
 });
 
 document.addEventListener('click', event => {

@@ -13,9 +13,9 @@
   <div id="report-content" hidden>
     <nav class="report-toolbar" aria-label="Aksi laporan">
       <a class="report-back" href="/">← Kembali ke dashboard</a>
-      <div><button type="button" id="print-report" class="report-print">Cetak / Simpan PDF</button></div>
+      <div><button type="button" id="print-report" class="report-print">Download PDF</button></div>
     </nav>
-    <main class="report-sheet">
+    <p id="pdf-status" role="alert" hidden></p><main class="report-sheet">
       <header class="report-heading">
         <img src="assets/wap-logo.png" class="report-wap" alt="Weda Bay Airport">
         <div><p>WEDA BAY AIRPORT · PKP-PK</p><h1>LAPORAN KEGIATAN HARIAN</h1><span>Airport Rescue and Fire Fighting</span></div>
@@ -45,6 +45,6 @@
   </div>
   <template id="personnel-template"><tr><td class="row-number"></td><td><input aria-label="Nama personel" placeholder="Nama personel"></td><td><input aria-label="Posisi M" maxlength="12"></td><td><input aria-label="Posisi O" maxlength="12"></td><td><input aria-label="Posisi tambahan" maxlength="12"></td><td class="screen-only"><button type="button" class="report-remove" aria-label="Hapus personel">×</button></td></tr></template>
   <template id="activity-template"><tr><td><input type="time" aria-label="Waktu kegiatan"></td><td><input aria-label="Nama kegiatan" placeholder="Nama kegiatan"></td><td><textarea rows="3" aria-label="Keterangan kegiatan" placeholder="Keterangan"></textarea></td><td class="documentation-cell"><label class="report-upload">Tambah foto<input type="file" accept="image/*" multiple></label><div class="report-photo-list"></div></td><td class="screen-only"><button type="button" class="report-remove" aria-label="Hapus kegiatan">×</button></td></tr></template>
-  <script src="assets/daily-report.js"></script>
+  <script src="assets/vendor/html2canvas.min.js"></script><script src="assets/vendor/jspdf.umd.min.js"></script><script src="assets/daily-report.js"></script>
 </body>
 </html>

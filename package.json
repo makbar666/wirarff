@@ -6,9 +6,13 @@
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev.mjs"
   },
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@neon/auth": "0.8.2",
-    "@neondatabase/serverless": "1.2.1"
+    "@neondatabase/serverless": "1.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1"
   }
 }
