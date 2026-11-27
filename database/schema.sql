@@ -8,8 +8,7 @@ CREATE TABLE IF NOT EXISTS management_roles (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO management_roles (id, name, can_manage_menus, can_manage_users, is_system) VALUES
-    ('admin', 'Administrator', true, true, true),
-    ('editor', 'Pengelola menu', true, false, true),
+    ('admin', 'Admin', true, true, true),
     ('member', 'Anggota', false, false, true)
 ON CONFLICT (id) DO NOTHING;
 
@@ -17,9 +16,14 @@ CREATE TABLE IF NOT EXISTS management_members (
     user_id text PRIMARY KEY,
     display_name text NOT NULL,
     enabled boolean NOT NULL DEFAULT true,
-    role_id text NOT NULL DEFAULT 'editor' REFERENCES management_roles(id)
+    role_id text NOT NULL DEFAULT 'member' REFERENCES management_roles(id)
 );
-ALTER TABLE management_members ADD COLUMN IF NOT EXISTS role_id text NOT NULL DEFAULT 'editor' REFERENCES management_roles(id);
+ALTER TABLE management_members ADD COLUMN IF NOT EXISTS role_id text NOT NULL DEFAULT 'member' REFERENCES management_roles(id);
+UPDATE management_members SET role_id='member' WHERE role_id NOT IN ('admin','member');
+DELETE FROM management_roles WHERE id NOT IN ('admin','member');
+UPDATE management_roles SET name='Admin', can_manage_menus=true, can_manage_users=true, is_system=true WHERE id='admin';
+UPDATE management_roles SET name='Anggota', can_manage_menus=false, can_manage_users=false, is_system=true WHERE id='member';
+ALTER TABLE management_members ALTER COLUMN role_id SET DEFAULT 'member';
 REVOKE ALL ON management_members FROM PUBLIC;
 ALTER TABLE management_members ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON management_roles FROM PUBLIC;

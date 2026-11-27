@@ -2,8 +2,8 @@ import { neon } from '@neondatabase/serverless';
 
 try { process.loadEnvFile(); } catch (error) { if (error.code !== 'ENOENT') throw error; }
 const [email, roleId] = process.argv.slice(2);
-if (!email?.includes('@') || !roleId || roleId.length > 80) {
-  console.error('Penggunaan: node scripts/set-member-role.mjs anggota@organisasi.id admin');
+if (!email?.includes('@') || !['admin', 'member'].includes(roleId)) {
+  console.error('Penggunaan: node scripts/set-member-role.mjs anggota@organisasi.id admin|member');
   process.exit(1);
 }
 if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL belum diatur.');

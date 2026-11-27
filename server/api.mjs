@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { createAuthServer, resolveNeonAuthLogging } from '@neon/auth/server';
 import { createAuth } from './auth.mjs';
 
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -10,6 +11,22 @@ function httpsUrl(value, field) {
     if (url.protocol === 'https:' && url.hostname) return url.toString();
   } catch { /* report validation below */ }
   throw fail(400, `${field} harus berupa URL HTTPS.`);
+}
+
+function createProvisioningAuth(request, origin, env) {
+  return createAuthServer({
+    baseUrl: env.NEON_AUTH_BASE_URL,
+    cookieSecret: env.NEON_AUTH_COOKIE_SECRET,
+    sameSite: 'strict',
+    log: resolveNeonAuthLogging({ logLevel: 'silent' }),
+    context: () => ({
+      getCookies: () => '',
+      setCookie: () => {},
+      getHeader: name => request.headers.get(name),
+      getOrigin: () => origin,
+      getFramework: () => process.env.VERCEL ? 'vercel' : process.env.NETLIFY ? 'netlify' : 'node'
+    })
+  });
 }
 
 export function createHandler({ env = process.env } = {}) {
@@ -72,46 +89,8 @@ export function createHandler({ env = process.env } = {}) {
       if (path === 'roles' && request.method === 'GET') {
         requireUserManager();
         const roles = await sql.query(`SELECT id, name, can_manage_menus AS "canManageMenus", can_manage_users AS "canManageUsers", is_system AS "isSystem"
-          FROM management_roles ORDER BY is_system DESC, name`);
+          FROM management_roles WHERE id IN ('admin','member') ORDER BY CASE id WHEN 'admin' THEN 0 ELSE 1 END`);
         return reply({ roles });
-      }
-      if (path === 'roles' && ['POST', 'PUT'].includes(request.method)) {
-        requireUserManager();
-        const input = await request.json();
-        const name = typeof input?.name === 'string' ? input.name.trim() : '';
-        const canManageMenus = input?.canManageMenus === true;
-        const canManageUsers = input?.canManageUsers === true;
-        if (!name || name.length > 80) throw fail(400, 'Nama role wajib diisi (maksimal 80 karakter).');
-        if (request.method === 'POST') {
-          const [role] = await sql.query(`INSERT INTO management_roles (id, name, can_manage_menus, can_manage_users)
-            VALUES (gen_random_uuid()::text, $1, $2, $3)
-            RETURNING id, name, can_manage_menus AS "canManageMenus", can_manage_users AS "canManageUsers", is_system AS "isSystem"`, [name, canManageMenus, canManageUsers]);
-          return reply({ role }, 201);
-        }
-        const id = typeof input?.id === 'string' ? input.id : '';
-        if (!id || id.length > 80) throw fail(400, 'Role tidak valid.');
-        if (!canManageUsers) {
-          const [impact] = await sql.query(`SELECT
-            (SELECT count(*)::int FROM management_members WHERE enabled=true AND role_id=$1) AS affected,
-            (SELECT count(*)::int FROM management_members m JOIN management_roles r ON r.id=m.role_id
-              WHERE m.enabled=true AND r.can_manage_users=true AND m.role_id<>$1) AS remaining`, [id]);
-          if (impact.affected > 0 && impact.remaining === 0) throw fail(409, 'Berikan izin pengelola pengguna ke role lain sebelum mengubah role ini.');
-        }
-        const [role] = await sql.query(`UPDATE management_roles SET name=$1, can_manage_menus=$2, can_manage_users=$3
-          WHERE id=$4 AND is_system=false
-          RETURNING id, name, can_manage_menus AS "canManageMenus", can_manage_users AS "canManageUsers", is_system AS "isSystem"`, [name, canManageMenus, canManageUsers, id]);
-        if (!role) throw fail(404, 'Role khusus tidak ditemukan atau tidak dapat diubah.');
-        return reply({ role });
-      }
-      if (path === 'roles' && request.method === 'DELETE') {
-        requireUserManager();
-        const input = await request.json();
-        if (typeof input?.id !== 'string' || !input.id || input.id.length > 80) throw fail(400, 'Role tidak valid.');
-        const [usage] = await sql.query('SELECT count(*)::int AS count FROM management_members WHERE role_id=$1', [input.id]);
-        if (usage.count > 0) throw fail(409, 'Role masih dipakai oleh pengguna. Pindahkan pengguna ke role lain terlebih dahulu.');
-        const deleted = await sql.query('DELETE FROM management_roles WHERE id=$1 AND is_system=false RETURNING id', [input.id]);
-        if (!deleted.length) throw fail(404, 'Role khusus tidak ditemukan atau tidak dapat dihapus.');
-        return reply({ ok: true });
       }
       if (path === 'members' && request.method === 'GET') {
         requireUserManager();
@@ -119,16 +98,36 @@ export function createHandler({ env = process.env } = {}) {
           sql.query(`SELECT m.user_id AS "userId", m.display_name AS name, m.enabled, m.role_id AS "roleId", u.email
             FROM management_members m LEFT JOIN neon_auth."user" u ON u.id::text=m.user_id WHERE m.enabled=true ORDER BY lower(m.display_name)`),
           sql.query(`SELECT id, name, can_manage_menus AS "canManageMenus", can_manage_users AS "canManageUsers"
-            FROM management_roles ORDER BY is_system DESC, name`)
+            FROM management_roles WHERE id IN ('admin','member') ORDER BY CASE id WHEN 'admin' THEN 0 ELSE 1 END`)
         ]);
         return reply({ members, roles });
+      }
+      if (path === 'members' && request.method === 'POST') {
+        requireUserManager();
+        const input = await request.json();
+        const name = typeof input?.name === 'string' ? input.name.trim() : '';
+        const email = typeof input?.email === 'string' ? input.email.trim().toLowerCase() : '';
+        const password = typeof input?.password === 'string' ? input.password : '';
+        const roleId = input?.roleId;
+        if (!name || name.length > 200 || !email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw fail(400, 'Nama atau email tidak valid.');
+        if (password.length < 12 || password.length > 128) throw fail(400, 'Kata sandi harus terdiri dari 12–128 karakter.');
+        if (!['admin', 'member'].includes(roleId)) throw fail(400, 'Role harus Admin atau Anggota.');
+        const [existing] = await sql.query('SELECT id FROM neon_auth."user" WHERE lower(email)=lower($1)', [email]);
+        if (existing) throw fail(409, 'Email sudah terdaftar di Neon Auth.');
+        const provisioningAuth = createProvisioningAuth(request, url.origin, env);
+        const result = await provisioningAuth.signUp.email({ email, name, password });
+        const createdUser = result.data?.user;
+        if (result.error || !createdUser?.id) throw fail(400, 'Neon Auth menolak pembuatan akun. Pastikan pendaftaran email aktif dan email belum digunakan.');
+        await sql.query(`INSERT INTO management_members (user_id, display_name, enabled, role_id)
+          VALUES ($1, $2, true, $3)`, [createdUser.id, name, roleId]);
+        return reply({ ok: true }, 201);
       }
       if (path === 'members' && request.method === 'PUT') {
         requireUserManager();
         const input = await request.json();
         const userId = typeof input?.userId === 'string' ? input.userId : '';
         const roleId = typeof input?.roleId === 'string' ? input.roleId : '';
-        if (!userId || userId.length > 120 || !roleId || roleId.length > 80) throw fail(400, 'Pengguna atau role tidak valid.');
+        if (!userId || userId.length > 120 || !['admin', 'member'].includes(roleId)) throw fail(400, 'Role harus Admin atau Anggota.');
         const [target] = await sql.query('SELECT can_manage_users AS "canManageUsers" FROM management_roles WHERE id=$1', [roleId]);
         if (!target) throw fail(404, 'Role tidak ditemukan.');
         if (userId === session.data.user.id && !target.canManageUsers) {
@@ -224,7 +223,11 @@ export function createHandler({ env = process.env } = {}) {
       throw fail(404, 'Endpoint tidak ditemukan.');
     } catch (error) {
       if (error.status) return reply({ error: error.message }, error.status);
-      if (error?.code === '23505') return reply({ error: error.constraint?.includes('management_roles') ? 'Nama role sudah terdaftar.' : 'Nama kendaraan sudah terdaftar.' }, 409);
+      if (error?.code === '23505') {
+        if (error.constraint?.includes('management_members')) return reply({ error: 'Email sudah memiliki akses ke portal.' }, 409);
+        if (error.constraint?.includes('management_roles')) return reply({ error: 'Nama role sudah terdaftar.' }, 409);
+        return reply({ error: 'Nama kendaraan sudah terdaftar.' }, 409);
+      }
       return reply({ error: 'Layanan data sedang tidak tersedia. Coba lagi nanti.' }, 503);
     }
   };

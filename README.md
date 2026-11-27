@@ -51,12 +51,12 @@ node scripts/migrate-role-access.mjs
 node scripts/set-member-role.mjs admin@organisasi.id admin
 ```
 
-Perintah kedua menetapkan administrator awal dan hanya perlu dilakukan sekali. Alternatifnya, atur `PORTAL_ADMIN_EMAIL` pada environment Vercel/local; alamat tersebut otomatis mendapat role Administrator saat login. Administrator dapat membuka **Master Role & User**, membuat role khusus dengan izin kelola menu/pengguna, dan menetapkan role kepada setiap anggota aktif. Akun lama mendapat role **Pengelola menu** saat migrasi agar pengelolaan dokumen yang sudah ada tetap berfungsi.
+Perintah kedua menetapkan administrator awal dan hanya perlu dilakukan sekali. Alternatifnya, atur `PORTAL_ADMIN_EMAIL` pada environment Vercel/local; alamat tersebut otomatis mendapat role Admin saat login. Role hanya terdiri dari **Admin** dan **Anggota**. Admin dapat membuka **Pengguna & Role**, membuat user Neon Auth dari halaman tersebut, dan menetapkan role untuk setiap anggota aktif. Akun lama yang bukan Admin dipetakan menjadi Anggota saat migrasi.
 
 Jangan commit `.env` atau menyimpan connection string di `public/`. Konfigurasi `.env.example` hanya contoh placeholder.
 
 ## Isi portal
 
-Template portal, halaman master menu, dan master role/user dirender ke `public/index.html`, `public/master-menu.html`, dan `public/master-users.html` saat build. Role diperiksa pada API; hanya role dengan izin yang dapat mengelola menu atau pengguna. Data role disimpan di Neon `management_roles` dan penugasan pada `management_members`.
+Template portal, halaman master menu, dan halaman pengguna dirender ke `public/index.html`, `public/master-menu.html`, dan `public/master-users.html` saat build. Role Admin/Anggota diperiksa pada API; hanya Admin yang dapat mengelola menu, membuat user, atau menetapkan role. Data role disimpan di Neon `management_roles` dan penugasan pada `management_members`.
 
-Kalkulator ARFF tersedia di `public/kalkulator.html` dan dapat dibuka dari dashboard. Halamannya mencakup perhitungan pesawat, personel/TRA, tabel minimum, dan database dimensi pesawat. Nilai awal Dhoho tidak mengisi kategori PKP-PK; kategori resmi harus dipilih sebelum hasil Q1/Q2 digunakan. Rumus, nilai tabel, dimensi, serta profil bandara masih harus diverifikasi terhadap dokumen resmi terbaru dan pemilik operasional; kalkulator adalah alat bantu awal, bukan penentu kepatuhan.
+Kalkulator ARFF tersedia di `public/kalkulator.html` dan dapat dibuka dari dashboard. Halamannya mencakup perhitungan pesawat, personel/TRA, tabel minimum, dan database dimensi pesawat. Nilai awal Weda Bay tidak mengisi kategori PKP-PK; kategori resmi harus dipilih sebelum hasil Q1/Q2 digunakan. Rumus, nilai tabel, dimensi, serta profil bandara masih harus diverifikasi terhadap dokumen resmi terbaru dan pemilik operasional; kalkulator adalah alat bantu awal, bukan penentu kepatuhan.
