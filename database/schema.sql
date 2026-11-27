@@ -38,12 +38,14 @@ CREATE TABLE IF NOT EXISTS management_documents (
     url text NOT NULL DEFAULT '',
     action_type text NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'vehicle_picker')),
     option_vehicle_ids text[] NOT NULL DEFAULT '{}',
+    options jsonb NOT NULL DEFAULT '[]'::jsonb,
     icon text NOT NULL DEFAULT '▤',
     enabled boolean NOT NULL DEFAULT true,
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
 ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS option_vehicle_ids text[] NOT NULL DEFAULT '{}';
+ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS options jsonb NOT NULL DEFAULT '[]'::jsonb;
 
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_check;
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_length_check;

@@ -9,7 +9,6 @@ const searchInput = document.getElementById('document-search');
 const clearSearchButton = document.getElementById('clear-search');
 const loadingDialog = document.getElementById('loading-dialog');
 let allDocuments = [];
-let allVehicles = [];
 let pendingRequests = 0;
 
 function showPortal(user) {
@@ -74,7 +73,7 @@ function renderDocuments(documents) {
       const button = node('button', 'card-action', 'Pilih kendaraan →');
       button.type = 'button';
       button.dataset.openVehicles = 'true';
-      button.dataset.vehicleIds = JSON.stringify(item.optionVehicleIds || []);
+      button.dataset.vehicleOptions = JSON.stringify(item.options || []);
       bottom.append(button);
     } else if (safeHttpsUrl(item.url)) {
       const link = node('a', 'card-action', 'Buka dokumen ↗');
@@ -88,21 +87,20 @@ function renderDocuments(documents) {
   }
   if (query && !filtered.length) documentList.append(node('p', 'search-empty', 'Dokumen tidak ditemukan.'));
 }
-function renderVehicles(vehicles, optionIds = []) {
+function renderVehicleOptions(options = []) {
   if (!vehicleList) return;
   vehicleList.replaceChildren();
-  if (optionIds.length) vehicles = vehicles.filter(vehicle => optionIds.includes(vehicle.id));
-  if (!vehicles.length) {
-    vehicleList.append(node('p', 'vehicle-status', 'Belum ada kendaraan.'));
+  if (!options.length) {
+    vehicleList.append(node('p', 'vehicle-status', 'Belum ada pilihan tersedia.'));
     return;
   }
-  vehicles.forEach((vehicle, index) => {
+  options.forEach((option, index) => {
     const row = node('div', 'vehicle');
     row.append(node('span', 'vehicle-number', String(index + 1).padStart(2, '0')));
-    row.append(node('strong', '', vehicle.name));
-    if (safeHttpsUrl(vehicle.url)) {
+    row.append(node('strong', '', option.label));
+    if (safeHttpsUrl(option.url)) {
       const link = node('a', '', 'Buka ↗');
-      link.href = safeHttpsUrl(vehicle.url);
+      link.href = safeHttpsUrl(option.url);
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       row.append(link);
@@ -115,7 +113,6 @@ async function loadMasterData() {
   try {
     const data = await api('master-data');
     allDocuments = data.documents || [];
-    allVehicles = data.vehicles || [];
     renderDocuments(allDocuments);
   } catch (error) {
     masterError.textContent = error.message;
@@ -145,9 +142,9 @@ document.getElementById('logout-button')?.addEventListener('click', async () => 
 documentList?.addEventListener('click', event => {
   const button = event.target.closest('[data-open-vehicles]');
   if (button) {
-    let optionIds = [];
-    try { optionIds = JSON.parse(button.dataset.vehicleIds || '[]'); } catch { /* use all vehicles for older menu data */ }
-    renderVehicles(allVehicles, optionIds);
+    let options = [];
+    try { options = JSON.parse(button.dataset.vehicleOptions || '[]'); } catch { /* ignore invalid menu data */ }
+    renderVehicleOptions(options);
     document.getElementById('maintenance-dialog').showModal();
   }
 });

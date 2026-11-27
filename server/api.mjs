@@ -50,6 +50,7 @@ export function createHandler({ env = process.env } = {}) {
   let documentOptionsReady;
   const ensureDocumentOptions = sql => {
     documentOptionsReady ||= sql.query(`ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS option_vehicle_ids text[] NOT NULL DEFAULT '{}'`)
+      .then(() => sql.query(`ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS options jsonb NOT NULL DEFAULT '[]'::jsonb`))
       .catch(error => { documentOptionsReady = null; throw error; });
     return documentOptionsReady;
   };
@@ -102,8 +103,11 @@ export function createHandler({ env = process.env } = {}) {
       if (path === 'master-data' && request.method === 'GET') {
         await ensureDocumentOptions(sql);
         const [documents, vehicles] = await Promise.all([
-          sql.query(`SELECT id, number, title, description, category, url, action_type AS "actionType", icon, option_vehicle_ids AS "optionVehicleIds"
-            FROM management_documents WHERE enabled = true ORDER BY number`),
+          sql.query(`SELECT d.id, d.number, d.title, d.description, d.category, d.url, d.action_type AS "actionType", d.icon,
+            CASE WHEN jsonb_array_length(d.options) > 0 THEN d.options
+              ELSE COALESCE((SELECT jsonb_agg(jsonb_build_object('label', v.name, 'url', v.url) ORDER BY v.sort_order)
+                FROM management_vehicles v WHERE v.id=ANY(d.option_vehicle_ids)), '[]'::jsonb) END AS options
+            FROM management_documents d WHERE d.enabled = true ORDER BY d.number`),
           sql.query(`SELECT id, sort_order AS number, name, url
             FROM management_vehicles WHERE enabled = true ORDER BY sort_order`)
         ]);
@@ -212,16 +216,20 @@ export function createHandler({ env = process.env } = {}) {
         const actionType = input?.actionType;
         if (!title || title.length > 160 || description.length > 500 || category.length > 60) throw fail(400, 'Nama atau deskripsi dokumen tidak valid.');
         if (!['link', 'vehicle_picker'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
-        const optionVehicleIds = input?.optionVehicleIds;
-        if (!Array.isArray(optionVehicleIds) || optionVehicleIds.length > 100 || optionVehicleIds.some(id => typeof id !== 'string' || !id || id.length > 80) || new Set(optionVehicleIds).size !== optionVehicleIds.length) throw fail(400, 'Pilihan kendaraan tidak valid.');
-        if (actionType === 'vehicle_picker' && optionVehicleIds.length === 0) throw fail(400, 'Pilih minimal satu kendaraan untuk opsi pilihan.');
-        const availableOptions = optionVehicleIds.length ? await sql.query('SELECT id FROM management_vehicles WHERE enabled=true AND id=ANY($1::text[])', [optionVehicleIds]) : [];
-        if (availableOptions.length !== optionVehicleIds.length) throw fail(400, 'Ada pilihan kendaraan yang sudah tidak tersedia.');
+        const options = input?.options;
+        if (!Array.isArray(options) || options.length > 100) throw fail(400, 'Pilihan kendaraan tidak valid.');
+        const normalizedOptions = options.map(option => {
+          const label = typeof option?.label === 'string' ? option.label.trim() : '';
+          const url = typeof option?.url === 'string' ? httpsUrl(option.url.trim(), 'URL pilihan') : '';
+          if (!label || label.length > 120 || !url) throw fail(400, 'Setiap pilihan harus memiliki teks dan URL HTTPS.');
+          return { label, url };
+        });
+        if (actionType === 'vehicle_picker' && normalizedOptions.length === 0) throw fail(400, 'Tambahkan minimal satu pilihan kendaraan.');
         const documentUrl = httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen');
-        const [document] = await sql.query(`INSERT INTO management_documents (id, title, description, category, url, action_type, icon, option_vehicle_ids)
-          VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, '▤', $6::text[])
-          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, option_vehicle_ids AS "optionVehicleIds"`,
-        [title, description, category, documentUrl, actionType, optionVehicleIds]);
+        const [document] = await sql.query(`INSERT INTO management_documents (id, title, description, category, url, action_type, icon, options)
+          VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, '▤', $6::jsonb)
+          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, options`,
+        [title, description, category, documentUrl, actionType, JSON.stringify(normalizedOptions)]);
         return reply({ document }, 201);
       }
 
@@ -256,16 +264,20 @@ export function createHandler({ env = process.env } = {}) {
         const actionType = input?.actionType;
         if (!id || id.length > 80 || !title || title.length > 160 || description.length > 500 || category.length > 60) throw fail(400, 'Data dokumen tidak valid.');
         if (!['link', 'vehicle_picker'].includes(actionType)) throw fail(400, 'Aksi dokumen tidak valid.');
-        const optionVehicleIds = input?.optionVehicleIds;
-        if (!Array.isArray(optionVehicleIds) || optionVehicleIds.length > 100 || optionVehicleIds.some(optionId => typeof optionId !== 'string' || !optionId || optionId.length > 80) || new Set(optionVehicleIds).size !== optionVehicleIds.length) throw fail(400, 'Pilihan kendaraan tidak valid.');
-        if (actionType === 'vehicle_picker' && optionVehicleIds.length === 0) throw fail(400, 'Pilih minimal satu kendaraan untuk opsi pilihan.');
-        const availableOptions = optionVehicleIds.length ? await sql.query('SELECT id FROM management_vehicles WHERE enabled=true AND id=ANY($1::text[])', [optionVehicleIds]) : [];
-        if (availableOptions.length !== optionVehicleIds.length) throw fail(400, 'Ada pilihan kendaraan yang sudah tidak tersedia.');
+        const options = input?.options;
+        if (!Array.isArray(options) || options.length > 100) throw fail(400, 'Pilihan kendaraan tidak valid.');
+        const normalizedOptions = options.map(option => {
+          const label = typeof option?.label === 'string' ? option.label.trim() : '';
+          const url = typeof option?.url === 'string' ? httpsUrl(option.url.trim(), 'URL pilihan') : '';
+          if (!label || label.length > 120 || !url) throw fail(400, 'Setiap pilihan harus memiliki teks dan URL HTTPS.');
+          return { label, url };
+        });
+        if (actionType === 'vehicle_picker' && normalizedOptions.length === 0) throw fail(400, 'Tambahkan minimal satu pilihan kendaraan.');
         const documentUrl = httpsUrl(typeof input.url === 'string' ? input.url.trim() : '', 'URL dokumen');
-        const [document] = await sql.query(`UPDATE management_documents SET title=$1, description=$2, category=$3, url=$4, action_type=$5, option_vehicle_ids=$6::text[]
+        const [document] = await sql.query(`UPDATE management_documents SET title=$1, description=$2, category=$3, url=$4, action_type=$5, options=$6::jsonb
           WHERE id=$7 AND enabled=true
-          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, option_vehicle_ids AS "optionVehicleIds"`,
-        [title, description, category, documentUrl, actionType, optionVehicleIds, id]);
+          RETURNING id, number, title, description, category, url, action_type AS "actionType", icon, options`,
+        [title, description, category, documentUrl, actionType, JSON.stringify(normalizedOptions), id]);
         if (!document) throw fail(404, 'Dokumen tidak ditemukan.');
         return reply({ document });
       }
