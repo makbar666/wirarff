@@ -24,7 +24,7 @@ function showPortal(user) {
   if (usersLink) usersLink.hidden = !isAdmin;
   if (calculatorLink) calculatorLink.hidden = false;
   document.body.className = 'app';
-  document.title = `Dashboard — ${name} — PKP-PK Weda Bay`;
+  document.title = `Dashboard — ${name} — Yogi Prasetya E.W.`;
 }
 function showLogin() {
   if (portalApp) portalApp.hidden = true;
