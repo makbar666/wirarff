@@ -19,8 +19,9 @@ function showPortal(user) {
   const menuLink = document.getElementById('master-menu-link');
   const usersLink = document.getElementById('master-users-link');
   const calculatorLink = document.getElementById('calculator-link');
-  if (menuLink) menuLink.hidden = user?.canManageMenus !== true;
-  if (usersLink) usersLink.hidden = user?.canManageUsers !== true;
+  const isAdmin = user?.roleId === 'admin';
+  if (menuLink) menuLink.hidden = !isAdmin;
+  if (usersLink) usersLink.hidden = !isAdmin;
   if (calculatorLink) calculatorLink.hidden = false;
   document.body.className = 'app';
   document.title = `Dashboard — ${name} — PKP-PK Weda Bay`;

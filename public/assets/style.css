@@ -97,6 +97,7 @@
 @keyframes loading-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.directory-search{max-width:none;margin-bottom:18px}}
 .master-menu-link{display:inline-flex;align-items:center;border:1px solid #cbd9e3;background:#fff;padding:10px 14px;color:#07518a;font-size:12px;font-weight:700;text-decoration:none}
+.topbar .master-menu-link[hidden]{display:none!important}
 .topbar{position:sticky;top:0;z-index:30;background:#fff}.master-page-actions{display:flex;align-items:center;gap:10px}.master-page-actions .master-menu-link{white-space:nowrap}
 .master-menu-link:hover{background:#edf5fa;border-color:#9cbdd7}
 .master-page .section-heading{align-items:center;margin-bottom:24px}
