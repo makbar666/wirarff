@@ -37,10 +37,13 @@ CREATE TABLE IF NOT EXISTS management_documents (
     category text NOT NULL DEFAULT '',
     url text NOT NULL DEFAULT '',
     action_type text NOT NULL DEFAULT 'link' CHECK (action_type IN ('link', 'vehicle_picker')),
+    option_vehicle_ids text[] NOT NULL DEFAULT '{}',
     icon text NOT NULL DEFAULT '▤',
     enabled boolean NOT NULL DEFAULT true,
     created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE management_documents ADD COLUMN IF NOT EXISTS option_vehicle_ids text[] NOT NULL DEFAULT '{}';
 
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_check;
 ALTER TABLE management_documents DROP CONSTRAINT IF EXISTS management_documents_category_length_check;

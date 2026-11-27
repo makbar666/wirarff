@@ -144,9 +144,28 @@ function updateFormMode(clearUrl = false) {
   document.getElementById('record-name-label').textContent = isVehicle ? 'Nama kendaraan' : 'Nama dokumen';
   document.getElementById('record-url-label').textContent = isVehicle ? 'URL dokumen kendaraan (opsional)' : 'URL HTTPS (opsional)';
   document.getElementById('record-url-field').hidden = isPicker;
+  document.getElementById('document-options-field').hidden = isVehicle || !isPicker;
   document.getElementById('record-action-hint').hidden = isVehicle;
   if (clearUrl) document.getElementById('record-url').value = '';
   document.getElementById('record-action-hint').textContent = isPicker ? 'Kartu akan membuka opsi pilihan kendaraan.' : 'Kartu akan membuka tautan dokumen.';
+}
+function renderVehicleOptions(selectedIds = []) {
+  const container = document.getElementById('document-options');
+  container.replaceChildren();
+  if (!records.vehicles.length) {
+    container.append(node('p', 'vehicle-option-empty', 'Belum ada data kendaraan. Tambahkan kendaraan terlebih dahulu.'));
+    return;
+  }
+  for (const vehicle of records.vehicles) {
+    const label = node('label', 'vehicle-option');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'optionVehicleIds';
+    checkbox.value = vehicle.id;
+    checkbox.checked = selectedIds.includes(vehicle.id);
+    label.append(checkbox, node('span', '', vehicle.name));
+    container.append(label);
+  }
 }
 function openNew() {
   recordForm.reset();
@@ -155,6 +174,7 @@ function openNew() {
   recordForm.elements.kind.disabled = false;
   recordForm.elements.kind.value = 'document';
   recordForm.elements.actionType.value = 'link';
+  renderVehicleOptions([]);
   document.getElementById('record-dialog-title').textContent = 'Tambah data.';
   recordForm.querySelector('button[type="submit"]').innerHTML = 'Simpan data <span>↗</span>';
   recordError.hidden = true;
@@ -174,6 +194,7 @@ function openEdit(record) {
     recordForm.dataset.category = record.category || '';
     recordForm.elements.description.value = record.description || '';
     recordForm.elements.actionType.value = record.actionType;
+    renderVehicleOptions(record.item.optionVehicleIds || []);
   }
   document.getElementById('record-dialog-title').textContent = record.kind === 'vehicles' ? 'Edit kendaraan.' : 'Edit dokumen.';
   recordForm.querySelector('button[type="submit"]').innerHTML = 'Simpan perubahan <span>↗</span>';
@@ -223,7 +244,8 @@ recordForm.addEventListener('submit', async event => {
       input = { name: recordForm.elements.name.value, url };
     } else {
       path = 'documents';
-      input = { title: recordForm.elements.name.value, description: recordForm.elements.description.value, category: recordForm.dataset.category || '', actionType: recordForm.elements.actionType.value, url };
+      const actionType = recordForm.elements.actionType.value;
+      input = { title: recordForm.elements.name.value, description: recordForm.elements.description.value, category: recordForm.dataset.category || '', actionType, url, optionVehicleIds: actionType === 'vehicle_picker' ? [...recordForm.querySelectorAll('[name="optionVehicleIds"]:checked')].map(option => option.value) : [] };
     }
     if (isEdit) input.id = recordForm.dataset.editId;
     await api(path, { method: isEdit ? 'PUT' : 'POST', body: JSON.stringify(input) });

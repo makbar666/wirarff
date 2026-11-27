@@ -9,6 +9,7 @@ const searchInput = document.getElementById('document-search');
 const clearSearchButton = document.getElementById('clear-search');
 const loadingDialog = document.getElementById('loading-dialog');
 let allDocuments = [];
+let allVehicles = [];
 let pendingRequests = 0;
 
 function showPortal(user) {
@@ -71,6 +72,7 @@ function renderDocuments(documents) {
       const button = node('button', 'card-action', 'Pilih kendaraan →');
       button.type = 'button';
       button.dataset.openVehicles = 'true';
+      button.dataset.vehicleIds = JSON.stringify(item.optionVehicleIds || []);
       bottom.append(button);
     } else if (safeHttpsUrl(item.url)) {
       const link = node('a', 'card-action', 'Buka dokumen ↗');
@@ -84,9 +86,10 @@ function renderDocuments(documents) {
   }
   if (query && !filtered.length) documentList.append(node('p', 'search-empty', 'Dokumen tidak ditemukan.'));
 }
-function renderVehicles(vehicles) {
+function renderVehicles(vehicles, optionIds = []) {
   if (!vehicleList) return;
   vehicleList.replaceChildren();
+  if (optionIds.length) vehicles = vehicles.filter(vehicle => optionIds.includes(vehicle.id));
   if (!vehicles.length) {
     vehicleList.append(node('p', 'vehicle-status', 'Belum ada kendaraan.'));
     return;
@@ -110,8 +113,8 @@ async function loadMasterData() {
   try {
     const data = await api('master-data');
     allDocuments = data.documents || [];
+    allVehicles = data.vehicles || [];
     renderDocuments(allDocuments);
-    renderVehicles(data.vehicles || []);
   } catch (error) {
     masterError.textContent = error.message;
     masterError.hidden = false;
@@ -138,7 +141,13 @@ document.getElementById('logout-button')?.addEventListener('click', async () => 
   try { await api('logout', { method: 'POST', body: '{}' }); } finally { showLogin(); }
 });
 documentList?.addEventListener('click', event => {
-  if (event.target.closest('[data-open-vehicles]')) document.getElementById('maintenance-dialog').showModal();
+  const button = event.target.closest('[data-open-vehicles]');
+  if (button) {
+    let optionIds = [];
+    try { optionIds = JSON.parse(button.dataset.vehicleIds || '[]'); } catch { /* use all vehicles for older menu data */ }
+    renderVehicles(allVehicles, optionIds);
+    document.getElementById('maintenance-dialog').showModal();
+  }
 });
 searchInput?.addEventListener('input', () => {
   clearSearchButton.hidden = !searchInput.value;
