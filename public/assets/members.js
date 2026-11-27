@@ -9,6 +9,8 @@ const toast = document.getElementById('app-toast');
 let pendingRequests = 0;
 let roles = [];
 let pendingDeleteMember = null;
+let editingMember = null;
+let passwordMember = null;
 let toastTimer;
 
 async function api(path, options = {}) {
@@ -45,43 +47,37 @@ function renderMembers(members) {
     row.append(node('td', 'table-number', String(index + 1).padStart(2, '0')));
     row.append(node('td', 'table-name', member.name));
     row.append(node('td', '', member.email || 'Email tidak ditemukan'));
-    const roleCell = document.createElement('td');
-    const select = document.createElement('select');
-    select.className = 'role-select';
-    roles.forEach(role => {
-      const option = document.createElement('option');
-      option.value = role.id;
-      option.textContent = role.name;
-      option.selected = role.id === member.roleId;
-      select.append(option);
-    });
-    roleCell.append(select);
-    row.append(roleCell);
+    const role = roles.find(item => item.id === member.roleId);
+    row.append(node('td', '', role?.name || member.roleId));
     const actions = node('td', 'table-actions');
-    const save = node('button', 'edit-item', 'Simpan');
-    save.type = 'button';
-    save.disabled = select.value === member.roleId;
-    select.addEventListener('change', () => { save.disabled = select.value === member.roleId; });
-    save.addEventListener('click', async () => {
-      save.disabled = true;
-      try {
-        await api('members', { method: 'PUT', body: JSON.stringify({ userId: member.userId, roleId: select.value }) });
-        await loadMembers();
-        showToast(`Role untuk ${member.name} diperbarui.`);
-      } catch (error) {
-        accessError.textContent = error.message;
-        accessError.hidden = false;
-        save.disabled = false;
-      }
+    const edit = node('button', 'icon-action edit-item', '✎');
+    edit.type = 'button'; edit.title = 'Edit data user'; edit.setAttribute('aria-label', `Edit data ${member.name}`);
+    edit.addEventListener('click', () => {
+      editingMember = member;
+      const form = document.getElementById('user-edit-form');
+      form.elements.name.value = member.name;
+      form.elements.roleId.value = member.roleId;
+      document.getElementById('user-edit-error').hidden = true;
+      document.getElementById('user-edit-dialog').showModal();
     });
-    const remove = node('button', 'delete-item', 'Hapus');
+    const password = node('button', 'icon-action edit-item', '🔑');
+    password.type = 'button'; password.title = 'Ganti kata sandi'; password.setAttribute('aria-label', `Ganti kata sandi ${member.name}`);
+    password.addEventListener('click', () => {
+      passwordMember = member;
+      const form = document.getElementById('user-password-form');
+      form.reset();
+      document.getElementById('user-password-error').hidden = true;
+      document.getElementById('user-password-dialog').showModal();
+    });
+    const remove = node('button', 'icon-action delete-item', '×');
     remove.type = 'button';
+    remove.title = 'Hapus user'; remove.setAttribute('aria-label', `Hapus ${member.name}`);
     remove.addEventListener('click', () => {
       pendingDeleteMember = member;
       document.getElementById('user-delete-message').textContent = `Cabut akses portal untuk ${member.name} (${member.email || member.userId})? Akun Neon Auth tetap tersimpan.`;
       document.getElementById('user-delete-dialog').showModal();
     });
-    actions.append(save, remove);
+    actions.append(edit, password, remove);
     row.append(actions);
     memberRows.append(row);
   });
@@ -113,6 +109,36 @@ document.getElementById('user-delete-confirm').addEventListener('click', async (
     await loadMembers();
     showToast(`Akses ${member.name} dicabut.`);
   } catch (error) { accessError.textContent = error.message; accessError.hidden = false; }
+});
+document.getElementById('user-edit-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!editingMember) return;
+  const member = editingMember;
+  const form = event.currentTarget;
+  const errorBox = document.getElementById('user-edit-error');
+  errorBox.hidden = true;
+  try {
+    await api('members', { method: 'PUT', body: JSON.stringify({ userId: member.userId, name: form.elements.name.value, roleId: form.elements.roleId.value }) });
+    document.getElementById('user-edit-dialog').close();
+    editingMember = null;
+    await loadMembers();
+    showToast(`Data ${member.name} diperbarui.`);
+  } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
+});
+document.getElementById('user-password-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!passwordMember) return;
+  const member = passwordMember;
+  const form = event.currentTarget;
+  const errorBox = document.getElementById('user-password-error');
+  errorBox.hidden = true;
+  try {
+    await api('members/change-password', { method: 'POST', body: JSON.stringify({ userId: member.userId, currentPassword: form.elements.currentPassword.value, newPassword: form.elements.newPassword.value }) });
+    document.getElementById('user-password-dialog').close();
+    passwordMember = null;
+    form.reset();
+    showToast(`Kata sandi ${member.name} berhasil diganti.`);
+  } catch (error) { errorBox.textContent = error.message; errorBox.hidden = false; }
 });
 userForm.addEventListener('submit', async event => {
   event.preventDefault();

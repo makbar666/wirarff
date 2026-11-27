@@ -29,6 +29,23 @@ function createProvisioningAuth(request, origin, env) {
   });
 }
 
+function createCredentialAuth(request, origin, env) {
+  const cookies = new Map();
+  return createAuthServer({
+    baseUrl: env.NEON_AUTH_BASE_URL,
+    cookieSecret: env.NEON_AUTH_COOKIE_SECRET,
+    sameSite: 'strict',
+    log: resolveNeonAuthLogging({ logLevel: 'silent' }),
+    context: () => ({
+      getCookies: () => [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
+      setCookie: (name, value) => { cookies.set(name, value); },
+      getHeader: name => request.headers.get(name),
+      getOrigin: () => origin,
+      getFramework: () => process.env.VERCEL ? 'vercel' : process.env.NETLIFY ? 'netlify' : 'node'
+    })
+  });
+}
+
 export function createHandler({ env = process.env } = {}) {
   return async request => {
     const headers = new Headers({ 'Cache-Control': 'no-store', 'Content-Type': 'application/json; charset=utf-8', 'X-Content-Type-Options': 'nosniff' });
@@ -141,12 +158,31 @@ export function createHandler({ env = process.env } = {}) {
         if (!member) throw fail(404, 'User aktif tidak ditemukan.');
         return reply({ ok: true });
       }
+      if (path === 'members/change-password' && request.method === 'POST') {
+        requireUserManager();
+        const input = await request.json();
+        const memberId = typeof input?.userId === 'string' ? input.userId : '';
+        const currentPassword = typeof input?.currentPassword === 'string' ? input.currentPassword : '';
+        const newPassword = typeof input?.newPassword === 'string' ? input.newPassword : '';
+        if (!memberId || memberId.length > 120 || !currentPassword || currentPassword.length > 128) throw fail(400, 'User dan kata sandi lama wajib diisi.');
+        if (newPassword.length < 12 || newPassword.length > 128) throw fail(400, 'Kata sandi baru harus terdiri dari 12–128 karakter.');
+        const [target] = await sql.query(`SELECT u.email FROM management_members m JOIN neon_auth."user" u ON u.id::text=m.user_id
+          WHERE m.user_id=$1 AND m.enabled=true`, [memberId]);
+        if (!target?.email) throw fail(404, 'Pengguna aktif tidak ditemukan.');
+        const credentials = createCredentialAuth(request, url.origin, env);
+        const signedIn = await credentials.signIn.email({ email: target.email, password: currentPassword });
+        if (signedIn.error || signedIn.data?.user?.id !== memberId) throw fail(401, 'Kata sandi lama tidak sesuai.');
+        const changed = await credentials.changePassword({ currentPassword, newPassword });
+        if (changed.error) throw fail(400, changed.error.message || 'Kata sandi tidak dapat diperbarui.');
+        return reply({ ok: true });
+      }
       if (path === 'members' && request.method === 'PUT') {
         requireUserManager();
         const input = await request.json();
         const userId = typeof input?.userId === 'string' ? input.userId : '';
         const roleId = typeof input?.roleId === 'string' ? input.roleId : '';
-        if (!userId || userId.length > 120 || !['admin', 'member'].includes(roleId)) throw fail(400, 'Role harus Admin atau Anggota.');
+        const name = typeof input?.name === 'string' ? input.name.trim() : '';
+        if (!userId || userId.length > 120 || !['admin', 'member'].includes(roleId) || !name || name.length > 200) throw fail(400, 'Nama atau role tidak valid.');
         const [target] = await sql.query('SELECT can_manage_users AS "canManageUsers" FROM management_roles WHERE id=$1', [roleId]);
         if (!target) throw fail(404, 'Role tidak ditemukan.');
         if (userId === session.data.user.id && !target.canManageUsers) {
@@ -154,7 +190,7 @@ export function createHandler({ env = process.env } = {}) {
             WHERE m.enabled=true AND r.can_manage_users=true AND m.user_id<>$1`, [userId]);
           if (others.count === 0) throw fail(409, 'Role Anda tidak bisa diturunkan sebelum pengguna lain diberi izin mengelola role.');
         }
-        const [updated] = await sql.query('UPDATE management_members SET role_id=$1 WHERE user_id=$2 AND enabled=true RETURNING user_id', [roleId, userId]);
+        const [updated] = await sql.query('UPDATE management_members SET display_name=$1, role_id=$2 WHERE user_id=$3 AND enabled=true RETURNING user_id', [name, roleId, userId]);
         if (!updated) throw fail(404, 'Pengguna aktif tidak ditemukan.');
         return reply({ ok: true });
       }
