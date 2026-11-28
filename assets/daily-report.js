@@ -2,6 +2,66 @@ const loading = document.getElementById('report-loading');
 const content = document.getElementById('report-content');
 const personnelRows = document.getElementById('personnel-rows');
 const activityRows = document.getElementById('activity-rows');
+const signaturePad = document.getElementById('signature-pad');
+const signatureContext = signaturePad.getContext('2d');
+let signaturePresent = false;
+let drawingPointer = null;
+let signatureVersion = 0;
+const signaturePoint = event => {
+  const rect = signaturePad.getBoundingClientRect();
+  return [(event.clientX - rect.left) * signaturePad.width / rect.width, (event.clientY - rect.top) * signaturePad.height / rect.height];
+};
+signaturePad.addEventListener('pointerdown', event => {
+  if (drawingPointer !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  signatureVersion++;
+  drawingPointer = event.pointerId;
+  signaturePad.setPointerCapture(event.pointerId);
+  signatureContext.lineWidth = 3;
+  signatureContext.lineCap = 'round';
+  signatureContext.lineJoin = 'round';
+  signatureContext.beginPath();
+  signatureContext.moveTo(...signaturePoint(event));
+  signatureContext.lineTo(...signaturePoint(event));
+  signatureContext.stroke();
+  signaturePresent = true;
+});
+signaturePad.addEventListener('pointermove', event => {
+  if (drawingPointer !== event.pointerId) return;
+  signatureContext.lineTo(...signaturePoint(event));
+  signatureContext.stroke();
+});
+for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  signaturePad.addEventListener(name, event => { if (drawingPointer === event.pointerId) drawingPointer = null; });
+}
+document.getElementById('signature-clear').addEventListener('click', () => {
+  signatureVersion++;
+  signatureContext.clearRect(0, 0, signaturePad.width, signaturePad.height);
+  signaturePresent = false;
+  document.getElementById('signature-upload').value = '';
+  document.getElementById('signature-error').hidden = true;
+});
+document.getElementById('signature-upload').addEventListener('change', async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  const version = ++signatureVersion;
+  const error = document.getElementById('signature-error');
+  let url;
+  try {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) throw new Error('Pilih gambar PNG, JPG, atau WebP maksimal 5 MB.');
+    url = URL.createObjectURL(file);
+    const img = new Image(); img.src = url;
+    await img.decode();
+    if (version !== signatureVersion) return;
+    const scale = Math.min(signaturePad.width / img.width, signaturePad.height / img.height);
+    signatureContext.clearRect(0, 0, signaturePad.width, signaturePad.height);
+    signatureContext.drawImage(img, (signaturePad.width - img.width * scale) / 2, (signaturePad.height - img.height * scale) / 2, img.width * scale, img.height * scale);
+    signaturePresent = true;
+    error.hidden = true;
+  } catch (failure) {
+    error.textContent = failure.message || 'Gambar gagal dibaca.';
+    error.hidden = false;
+  } finally { if (url) URL.revokeObjectURL(url); event.target.value = ''; }
+});
 
 function updateRowNumbers(container) {
   [...container.rows].forEach((row, index) => { row.querySelector('.row-number').textContent = String(index + 1); });
@@ -145,6 +205,12 @@ function preparePrintReport() {
     tr.append(el('td', inputs[2].value.trim()));
     const photos = el('td'); photos.className='pdf-photos'; row.querySelectorAll('.report-photo-list img').forEach(img => photos.append(img.cloneNode())); tr.append(photos); body.append(tr);
   });
-  table.append(body); output.append(table); document.body.append(output);
+  table.append(body); output.append(table);
+  const signature = el('div'); signature.className = 'pdf-signature';
+  signature.append(el('p', 'Tanda tangan'));
+  if (signaturePresent) { const img = el('img'); img.src = signaturePad.toDataURL('image/png'); img.alt = 'Tanda tangan'; signature.append(img); }
+  signature.append(el('p', document.getElementById('signature-name').value));
+  output.append(signature);
+  document.body.append(output);
 }
 window.addEventListener('beforeprint', preparePrintReport);
