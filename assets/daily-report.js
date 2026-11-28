@@ -260,7 +260,7 @@ function preparePrintReport() {
   });
   table.append(body); output.append(table);
   const signature = el('div'); signature.className = 'pdf-signature';
-  signature.append(el('p', 'Tanda tangan'));
+  signature.append(el('p', document.getElementById('signature-title').value));
   if (signaturePresent) { const img = el('img'); img.src = signaturePad.toDataURL('image/png'); img.alt = 'Tanda tangan'; signature.append(img); }
   signature.append(el('p', document.getElementById('signature-name').value));
   output.append(signature);
