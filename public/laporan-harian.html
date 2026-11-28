@@ -51,7 +51,11 @@
         <div id="signature-upload-panel" class="signature-upload-panel screen-only" hidden><label>Upload gambar tanda tangan<input id="signature-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><p>PNG, JPG, atau WebP. Maksimal 5 MB.</p></div>
         <p id="signature-error" role="alert" hidden></p>
         <div id="signature-workspace" hidden><p id="signature-instruction" class="screen-only"></p><canvas id="signature-pad" width="800" height="240" aria-label="Area tanda tangan"></canvas>
-        <button type="button" id="signature-clear" class="report-secondary screen-only">Hapus tanda tangan</button></div>
+        <div class="signature-tools screen-only" role="group" aria-label="Alat tanda tangan">
+          <button type="button" id="signature-undo" class="report-secondary" disabled>Undo</button>
+          <button type="button" id="signature-redo" class="report-secondary" disabled>Redo</button>
+          <button type="button" id="signature-clear" class="report-secondary" disabled>Clear</button>
+        </div></div>
       </section>
     </main>
   </div>

@@ -9,6 +9,35 @@ let drawingPointer = null;
 let signatureVersion = 0;
 let signatureMethod = '';
 const signatureDrafts = {};
+const undoHistory = [];
+const redoHistory = [];
+const captureSignature = () => ({ pixels: signatureContext.getImageData(0, 0, signaturePad.width, signaturePad.height), present: signaturePresent });
+function updateSignatureTools() {
+  document.getElementById('signature-undo').disabled = signatureMethod !== 'digital' || !undoHistory.length || drawingPointer !== null;
+  document.getElementById('signature-redo').disabled = signatureMethod !== 'digital' || !redoHistory.length || drawingPointer !== null;
+  document.getElementById('signature-clear').disabled = !signaturePresent || drawingPointer !== null;
+}
+function rememberSignature() {
+  undoHistory.push(captureSignature());
+  if (undoHistory.length > 30) undoHistory.shift();
+  redoHistory.length = 0;
+}
+function restoreSignature(state) {
+  signatureContext.putImageData(state.pixels, 0, 0);
+  signaturePresent = state.present;
+  signatureVersion++;
+  updateSignatureTools();
+}
+document.getElementById('signature-undo').addEventListener('click', () => {
+  if (signatureMethod !== 'digital' || !undoHistory.length || drawingPointer !== null) return;
+  redoHistory.push(captureSignature());
+  restoreSignature(undoHistory.pop());
+});
+document.getElementById('signature-redo').addEventListener('click', () => {
+  if (signatureMethod !== 'digital' || !redoHistory.length || drawingPointer !== null) return;
+  undoHistory.push(captureSignature());
+  restoreSignature(redoHistory.pop());
+});
 document.querySelectorAll('[name="signature-method"]').forEach(input => input.addEventListener('change', () => {
   if (signatureMethod) signatureDrafts[signatureMethod] = { pixels: signatureContext.getImageData(0, 0, signaturePad.width, signaturePad.height), present: signaturePresent };
   signatureVersion++;
@@ -23,6 +52,7 @@ document.querySelectorAll('[name="signature-method"]').forEach(input => input.ad
   document.getElementById('signature-instruction').textContent = signatureMethod === 'digital' ? 'Gambar tanda tangan di area berikut dengan mouse, pena, atau jari.' : 'Pratinjau tanda tangan yang diunggah.';
   signaturePad.style.touchAction = signatureMethod === 'digital' ? 'none' : 'auto';
   document.getElementById('signature-error').hidden = true;
+  updateSignatureTools();
 }));
 const signaturePoint = event => {
   const rect = signaturePad.getBoundingClientRect();
@@ -31,6 +61,7 @@ const signaturePoint = event => {
 signaturePad.addEventListener('pointerdown', event => {
   if (signatureMethod !== 'digital' || drawingPointer !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
   signatureVersion++;
+  rememberSignature();
   drawingPointer = event.pointerId;
   signaturePad.setPointerCapture(event.pointerId);
   signatureContext.lineWidth = 3;
@@ -41,6 +72,7 @@ signaturePad.addEventListener('pointerdown', event => {
   signatureContext.lineTo(...signaturePoint(event));
   signatureContext.stroke();
   signaturePresent = true;
+  updateSignatureTools();
 });
 signaturePad.addEventListener('pointermove', event => {
   if (drawingPointer !== event.pointerId) return;
@@ -48,14 +80,17 @@ signaturePad.addEventListener('pointermove', event => {
   signatureContext.stroke();
 });
 for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-  signaturePad.addEventListener(name, event => { if (drawingPointer === event.pointerId) drawingPointer = null; });
+  signaturePad.addEventListener(name, event => { if (drawingPointer === event.pointerId) { drawingPointer = null; updateSignatureTools(); } });
 }
 document.getElementById('signature-clear').addEventListener('click', () => {
+  if (!signaturePresent || drawingPointer !== null) return;
+  if (signatureMethod === 'digital') rememberSignature();
   signatureVersion++;
   signatureContext.clearRect(0, 0, signaturePad.width, signaturePad.height);
   signaturePresent = false;
   document.getElementById('signature-upload').value = '';
   document.getElementById('signature-error').hidden = true;
+  updateSignatureTools();
 });
 document.getElementById('signature-upload').addEventListener('change', async event => {
   const file = event.target.files[0];
@@ -73,6 +108,7 @@ document.getElementById('signature-upload').addEventListener('change', async eve
     signatureContext.clearRect(0, 0, signaturePad.width, signaturePad.height);
     signatureContext.drawImage(img, (signaturePad.width - img.width * scale) / 2, (signaturePad.height - img.height * scale) / 2, img.width * scale, img.height * scale);
     signaturePresent = true;
+    updateSignatureTools();
     error.hidden = true;
   } catch (failure) {
     error.textContent = failure.message || 'Gambar gagal dibaca.';
