@@ -41,14 +41,17 @@
         <div class="report-section-actions screen-only"><button type="button" id="add-activity" class="report-secondary">+ Kegiatan</button></div>
         <div class="report-table-wrap"><table class="report-table activity-table"><thead><tr><th>Waktu</th><th>Kegiatan</th><th>Keterangan</th><th>Dokumentasi</th><th class="screen-only">Kelola</th></tr></thead><tbody id="activity-rows"></tbody></table></div>
       </section>
-      <section class="report-section" aria-label="Tanda tangan">
+      <section class="report-section signature-section" aria-label="Tanda tangan">
         <h2>Tanda tangan</h2>
         <label>Nama penanda tangan<input id="signature-name" type="text" maxlength="150"></label>
-        <p class="screen-only">Unggah gambar PNG/JPG atau buat tanda tangan dengan mouse, pena, atau jari.</p>
-        <label class="screen-only">Unggah tanda tangan<input id="signature-upload" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <fieldset class="signature-options screen-only"><legend>Metode tanda tangan</legend>
+          <label><input type="radio" name="signature-method" value="upload"> Upload TTD gambar</label>
+          <label><input type="radio" name="signature-method" value="digital"> TTD digital</label>
+        </fieldset>
+        <div id="signature-upload-panel" class="signature-upload-panel screen-only" hidden><label>Upload gambar tanda tangan<input id="signature-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><p>PNG, JPG, atau WebP. Maksimal 5 MB.</p></div>
         <p id="signature-error" role="alert" hidden></p>
-        <canvas id="signature-pad" width="800" height="240" aria-label="Area menggambar tanda tangan"></canvas>
-        <button type="button" id="signature-clear" class="report-secondary screen-only">Hapus tanda tangan</button>
+        <div id="signature-workspace" hidden><p id="signature-instruction" class="screen-only"></p><canvas id="signature-pad" width="800" height="240" aria-label="Area tanda tangan"></canvas>
+        <button type="button" id="signature-clear" class="report-secondary screen-only">Hapus tanda tangan</button></div>
       </section>
     </main>
   </div>

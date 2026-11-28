@@ -7,12 +7,29 @@ const signatureContext = signaturePad.getContext('2d');
 let signaturePresent = false;
 let drawingPointer = null;
 let signatureVersion = 0;
+let signatureMethod = '';
+const signatureDrafts = {};
+document.querySelectorAll('[name="signature-method"]').forEach(input => input.addEventListener('change', () => {
+  if (signatureMethod) signatureDrafts[signatureMethod] = { pixels: signatureContext.getImageData(0, 0, signaturePad.width, signaturePad.height), present: signaturePresent };
+  signatureVersion++;
+  drawingPointer = null;
+  signatureMethod = input.value;
+  signatureContext.clearRect(0, 0, signaturePad.width, signaturePad.height);
+  const draft = signatureDrafts[signatureMethod];
+  if (draft) signatureContext.putImageData(draft.pixels, 0, 0);
+  signaturePresent = draft?.present || false;
+  document.getElementById('signature-upload-panel').hidden = signatureMethod !== 'upload';
+  document.getElementById('signature-workspace').hidden = false;
+  document.getElementById('signature-instruction').textContent = signatureMethod === 'digital' ? 'Gambar tanda tangan di area berikut dengan mouse, pena, atau jari.' : 'Pratinjau tanda tangan yang diunggah.';
+  signaturePad.style.touchAction = signatureMethod === 'digital' ? 'none' : 'auto';
+  document.getElementById('signature-error').hidden = true;
+}));
 const signaturePoint = event => {
   const rect = signaturePad.getBoundingClientRect();
   return [(event.clientX - rect.left) * signaturePad.width / rect.width, (event.clientY - rect.top) * signaturePad.height / rect.height];
 };
 signaturePad.addEventListener('pointerdown', event => {
-  if (drawingPointer !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  if (signatureMethod !== 'digital' || drawingPointer !== null || (event.pointerType === 'mouse' && event.button !== 0)) return;
   signatureVersion++;
   drawingPointer = event.pointerId;
   signaturePad.setPointerCapture(event.pointerId);
